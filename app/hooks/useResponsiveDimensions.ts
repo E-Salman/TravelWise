@@ -31,7 +31,7 @@ export function useResponsiveDimensions(options: Options = {}) {
       // Adjust one dimension to preserve aspect ratio
       const widthFromHeight = height * aspectRatio;
       const heightFromWidth = width / aspectRatio;
-
+      
       if (widthFromHeight <= width) {
         width = widthFromHeight;
       } else {
@@ -39,10 +39,28 @@ export function useResponsiveDimensions(options: Options = {}) {
       }
     }
 
+    console.log("width: " + width);
+    console.log("height: " + height);
+
     // ✅ Avoid upscaling by capping to max size
-    if (maxWidth !== undefined) width = Math.min(width, maxWidth);
-    if (maxHeight !== undefined) height = Math.min(height, maxHeight);
+    if (maxWidth !== undefined) {
+      width = Math.min(width, maxWidth);
+    }
+    else {
+      width = Math.min(width, screenWidth);
+    }
+
+    if (maxHeight !== undefined) { 
+      height = Math.min(height, maxHeight) 
+    }
+    else {
+      height = Math.min(height, screenHeight);
+    }
+
+    console.log("width: " + width);
+    console.log("height: " + height);
 
     return { width, height };
+
   }, [screenWidth, screenHeight, widthRatio, heightRatio, aspectRatio, maintainAspectRatio, maxWidth, maxHeight]);
 }
