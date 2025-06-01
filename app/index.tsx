@@ -1,31 +1,23 @@
 import { Button, Platform, StyleSheet, useWindowDimensions, Image } from 'react-native';
-import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
-import resolveAssetSource from 'react-native/Libraries/Image/resolveAssetSource';
-import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { useResponsiveDimensions } from './hooks/useResponsiveDimensions';
 import { useResponsiveImageDimensions } from './hooks/useResponsiveImageDimensions';
 
-export default function TabOneScreen() {
+export default function TabOnecreen() {
 
   const { width: imageWidth1, height: imageHeight1 } = useResponsiveImageDimensions({
     source: require('../assets/images/faceID.png'),
-    widthRatio: 0.7,
-    heightRatio: 1.5,
+    widthRatio: 0.2,
+    heightRatio: 0.2,
     maintainAspectRatio: true,
   });
 
   const { width: imageWidth2, height: imageHeight2 } = useResponsiveImageDimensions({
     source: require('../assets/images/TWlogo.png'),
     widthRatio: 0.7,
-    heightRatio: 1.5,
+    heightRatio: 0.5,
     maintainAspectRatio: true,
   });
-  
-  const router = useRouter();
-  const screenWidth = useWindowDimensions().width;
-  const screenHeight = useWindowDimensions().height;
 
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
@@ -122,20 +114,3 @@ export default function TabOneScreen() {
     </View>
   );*/
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-});

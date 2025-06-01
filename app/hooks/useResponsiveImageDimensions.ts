@@ -13,7 +13,7 @@ type Options = {
 export function useResponsiveImageDimensions(options: Options) {
   const {
     source,
-    widthRatio = 1,
+    widthRatio = 1, //tamaño maximo de la pantalla a utilizar
     heightRatio = 1,
     maintainAspectRatio = true,
   } = options;
