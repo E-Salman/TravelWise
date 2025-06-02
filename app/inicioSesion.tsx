@@ -5,9 +5,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
-import { useResponsiveDimensions } from '../hooks/useResponsiveDimensions';
-import { useResponsiveImageDimensions } from '../hooks/useResponsiveImageDimensions';
-
+import { useResponsiveDimensions } from './hooks/useResponsiveDimensions';
+import { useResponsiveImageDimensions } from './hooks/useResponsiveImageDimensions';
 
 
 export default function TabTwoScreen() {
@@ -17,16 +16,17 @@ export default function TabTwoScreen() {
   const router = useRouter();
 
   const { width: viewWidth, height: viewHeight } = useResponsiveDimensions({
-    heightRatio: 0.1,
+    heightRatio: 0.2,
     widthRatio: 1
   });
 
   const {width: logoWidth, height: logoHeight } = useResponsiveImageDimensions({
-    source: require('../../assets/images/TWlogo.png'),
-    heightRatio: 0.3,
-    widthRatio: 0.3,
+    source: require('../assets/images/TWlogo.png'),
+    heightRatio: 0.4,
+    widthRatio: 0.4,
     maintainAspectRatio: true
   });
+  
   
   //falta cambiar los estilos para que todas las alturas y anchos sean en base a un % del contenedor en el que estan, asi los hooks las ajustan automaticamente.
   //tambien mover inicio de sesion fuera de tabs, no deberia tener un layout (el menu de abajito), pero eso es mi opinion
@@ -35,12 +35,13 @@ export default function TabTwoScreen() {
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, width: viewWidth, height: viewHeight }}>
       <View style={styles.header}>{/* Header: logo + título */}
         <Image
-          source={require('../../assets/images/TWlogo.png')}
+          source={require('../assets/images/TWlogo.png')}
           style={{
             width: logoWidth,
             height: logoHeight,
             resizeMode: 'contain',
-            marginTop: 20,
+            marginTop: '5%',
+            marginBottom: '1%',
         }}
       />
         <Text style={styles.title}>Inicio de sesion</Text>
@@ -48,6 +49,7 @@ export default function TabTwoScreen() {
       </View>
       {/* Ingreso texto */}
       <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, width: viewWidth, height: viewHeight }}>
+      <View style={styles.form}>
         {/* Email */}
         <Text style={styles.email}>Email</Text>
         <TextInput
@@ -98,6 +100,7 @@ export default function TabTwoScreen() {
         <Text style={styles.registrarse}>Registrate</Text>
       </Pressable>
     </View>
+    </View>
   );
 }
 
@@ -106,63 +109,58 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingTop: 40,
+    paddingTop: '1%',
   },
   header: {
     alignItems: 'center',
+    marginBottom: '5%'
   },
   title: {
     fontSize: 25,
     fontWeight: 'bold',
     color: '#093659',
-    marginBottom: 10,
-  },
-  logo: {
-    width: 200,
-    height: 200,
-    resizeMode: 'contain',
-    marginBottom: 16
+    marginBottom: '2%',
   },
   form: {
-    width: '35%',
+    marginBottom: '10%',
     alignItems: 'flex-start',
   },
   email: {
     fontSize: 15,
     color: '#1E1E1E',
-    marginBottom: 5,
+    marginBottom: '1%',
 
   },
   emailInput: {
     width: '100%',
-    height: 40,
+    height: '40%',
     borderColor: '#1E1E1E',
     borderWidth: 1,
     borderRadius: 4,
-    paddingHorizontal: 8,
-    marginBottom: 10,
+    paddingHorizontal: '8%',
+    marginBottom: '5%',
   },
 
   contrasenia: {
     fontSize: 15,
     color: '#1E1E1E',
-    marginBottom: 5,
+    marginBottom: '5%',
   },
 
   contraseniaInput: {
-    width: '100%',
-    height: 40,
+    width: '20%',
+    height: '40%',
     borderColor: '#1E1E1E',
     borderWidth: 1,
     borderRadius: 4,
-    paddingHorizontal: 8,
-    marginBottom: 10,
+    paddingHorizontal: '8%',
+    marginBottom: '5%',
   },
 
   botonIngresa: {
-    width: '100%',
+    width: '20%', 
     backgroundColor: '#093659',
-    padding: 12,
+    padding: '12%',
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
@@ -173,7 +171,7 @@ const styles = StyleSheet.create({
     color: '#1E1E1E',
     fontSize: 16,
     textDecorationLine: 'underline',
-    marginBottom: 30
+    marginBottom: '1%'
   },
 
   enFila: {
@@ -181,8 +179,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',      // centra verticalmente
   },
   cajita: {
-    width: 14,
-    height: 14,
+    width: '5%',
+    height: '5%',
     borderWidth: 2,
     borderColor: '#093659',
     borderRadius: 4,
@@ -195,7 +193,7 @@ const styles = StyleSheet.create({
     borderColor: '#093659',
   },
   recordarme: {
-    marginLeft: 8,
+    marginLeft: '8%',
     fontSize: 14,
     color: '#1E1E1E',
   },
