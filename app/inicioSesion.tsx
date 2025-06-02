@@ -32,7 +32,7 @@ export default function TabTwoScreen() {
   //tambien mover inicio de sesion fuera de tabs, no deberia tener un layout (el menu de abajito), pero eso es mi opinion
 
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, width: viewWidth, height: viewHeight }}>
+    <View style={{ alignItems: 'center', justifyContent: 'center', width: viewWidth, height: viewHeight }}>
       <View style={styles.header}>{/* Header: logo + título */}
         <Image
           source={require('../assets/images/TWlogo.png')}
@@ -40,7 +40,7 @@ export default function TabTwoScreen() {
             width: logoWidth,
             height: logoHeight,
             resizeMode: 'contain',
-            marginTop: '5%',
+            marginTop: '200%',
             marginBottom: '1%',
         }}
       />
@@ -48,7 +48,8 @@ export default function TabTwoScreen() {
 
       </View>
       {/* Ingreso texto */}
-      <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, width: viewWidth, height: viewHeight }}>
+      <View style={{ alignItems: 'center', justifyContent: 'center',
+                     width: viewWidth, height: viewHeight, marginTop: '7%', }}>
       <View style={styles.form}>
         {/* Email */}
         <Text style={styles.email}>Email</Text>
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
   },
   emailInput: {
     width: '100%',
-    height: '40%',
+    height: '30%',
     borderColor: '#1E1E1E',
     borderWidth: 1,
     borderRadius: 4,
@@ -148,8 +149,8 @@ const styles = StyleSheet.create({
   },
 
   contraseniaInput: {
-    width: '20%',
-    height: '40%',
+    width: '100%',
+    height: '30%',
     borderColor: '#1E1E1E',
     borderWidth: 1,
     borderRadius: 4,
@@ -158,7 +159,8 @@ const styles = StyleSheet.create({
   },
 
   botonIngresa: {
-    width: '20%', 
+    width: '100%', 
+    height: '20%',
     backgroundColor: '#093659',
     padding: '12%',
     borderRadius: 6,
@@ -179,11 +181,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',      // centra verticalmente
   },
   cajita: {
-    width: '5%',
-    height: '5%',
+    width: '15%',
+    height: '70%',
     borderWidth: 2,
     borderColor: '#093659',
-    borderRadius: 4,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
