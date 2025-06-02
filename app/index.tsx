@@ -2,6 +2,8 @@ import { Button, Platform, StyleSheet, useWindowDimensions, Image } from 'react-
 import { Text, View } from '@/components/Themed';
 import { useRouter } from 'expo-router';
 import { useResponsiveImageDimensions } from './hooks/useResponsiveImageDimensions';
+import { loginUser } from './auth/loginUser.js';
+import { registerUser } from './auth/registerUser';
 
 export default function TabOnecreen() {
 
@@ -18,7 +20,7 @@ export default function TabOnecreen() {
     heightRatio: 0.5,
     maintainAspectRatio: true,
   });
-
+const router = useRouter();
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
       <Image

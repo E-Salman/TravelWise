@@ -8,8 +8,6 @@ import { Text, View } from '@/components/Themed';
 import { useResponsiveDimensions } from '../hooks/useResponsiveDimensions';
 import { useResponsiveImageDimensions } from '../hooks/useResponsiveImageDimensions';
 
-
-
 export default function TabTwoScreen() {
   const [email, setEmail] = useState('');
   const [contrasenia, setContrasenia] = useState('');
