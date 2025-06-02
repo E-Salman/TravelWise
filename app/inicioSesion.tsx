@@ -5,8 +5,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
-import { useResponsiveDimensions } from './hooks/useResponsiveDimensions';
-import { useResponsiveImageDimensions } from './hooks/useResponsiveImageDimensions';
+import { useResponsiveDimensions } from '../hooks/useResponsiveDimensions';
+import { useResponsiveImageDimensions } from '../hooks/useResponsiveImageDimensions';
+
 
 
 export default function TabTwoScreen() {
