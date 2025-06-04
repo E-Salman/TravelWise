@@ -7,7 +7,7 @@ export default function TabOneScreen() {
   return (
     <View style={styles.header}>{/* Header: logo + título */}
           <Image 
-                source={require('../../assets/images/TWlogo.png')}
+                source={require('../assets/images/TWlogo.png')}
                 style={styles.logo}/>
             <Text style={styles.title}>Placeholder de "Olvidaste tu contraseña"</Text>
             

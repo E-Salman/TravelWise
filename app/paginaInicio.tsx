@@ -7,9 +7,9 @@ export default function TabOneScreen() {
   return (
     <View style={styles.header}>{/* Header: logo + título */}
           <Image 
-                source={require('../../assets/images/TWlogo.png')}
+                source={require('../assets/images/TWlogo.png')}
                 style={styles.logo}/>
-            <Text style={styles.title}>Placeholder de "Registrarse"</Text>
+            <Text style={styles.title}>Placeholder de "Pagina de inicio"</Text>
             
         </View>
   );
