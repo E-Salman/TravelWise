@@ -5,8 +5,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
-import { useResponsiveDimensions } from './hooks/useResponsiveDimensions';
-import { useResponsiveImageDimensions } from './hooks/useResponsiveImageDimensions';
+import { useResponsiveDimensions } from '../hooks/useResponsiveDimensions';
+import { useResponsiveImageDimensions } from '../hooks/useResponsiveImageDimensions';
 
 export default function TabTwoScreen() {
   const [email, setEmail] = useState('');
@@ -20,7 +20,7 @@ export default function TabTwoScreen() {
   });
 
   const {width: logoWidth, height: logoHeight } = useResponsiveImageDimensions({
-    source: require('../assets/images/TWlogo.png'),
+    source: require('../../assets/images/TWlogo.png'),
     heightRatio: 0.3,
     widthRatio: 0.3,
     maintainAspectRatio: true
@@ -33,7 +33,7 @@ export default function TabTwoScreen() {
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, width: viewWidth, height: viewHeight }}>
       <View style={styles.header}>{/* Header: logo + título */}
         <Image
-          source={require('../assets/images/TWlogo.png')}
+          source={require('../../assets/images/TWlogo.png')}
           style={{
             width: logoWidth,
             height: logoHeight,
