@@ -12,7 +12,7 @@ export default function TabsLayout() {
   
   return (
     <Tabs
-      initialRouteName="inicioSesion"
+      initialRouteName="paginaInicio"
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme].tint,
       }}
