@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { StyleSheet, Image, TextInput, Pressable, Alert } from 'react-native';
+import {
+  StyleSheet,
+  Image,
+  TextInput,
+  Pressable,
+  Alert,
+  TouchableOpacity,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Text, View } from '@/components/Themed';
 
@@ -30,21 +37,32 @@ export default function RegistroScreen() {
       return;
     }
 
-    // Registro exitoso (en un caso real, se llamaría a una API)
     Alert.alert('Éxito', '¡Registro exitoso!');
     router.replace('/inicioSesion');
   };
 
   return (
     <View style={styles.container}>
+      {/* Header con flecha + logo + título */}
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <Image
+            source={require('@/assets/images/flechapng.png')}
+            style={styles.backIcon}
+          />
+        </TouchableOpacity>
+
         <Image
-          source={require('../../assets/images/TWlogo.png')}
+          source={require('@/assets/images/TWlogo.png')}
           style={styles.logo}
         />
         <Text style={styles.title}>Registro</Text>
       </View>
 
+      {/* Campos */}
       <Text style={styles.label}>Nombre completo</Text>
       <TextInput
         style={styles.input}
@@ -98,16 +116,13 @@ export default function RegistroScreen() {
       <Pressable style={styles.boton} onPress={handleRegistro}>
         <Text style={styles.botonTexto}>Registrarse</Text>
       </Pressable>
-
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
-    justifyContent: 'center',
     backgroundColor: '#fff',
   },
   header: {
@@ -115,11 +130,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  logo: {
-    width: 80,
-    height: 80,
+  backButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  backIcon: {
+    width: 30,
+    height: 30,
+    tintColor: '#093659',
     resizeMode: 'contain',
-    marginRight: 12,
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    resizeMode: 'contain',
+    marginRight: 8,
   },
   title: {
     fontSize: 28,
@@ -152,12 +180,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  volverLogin: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#093659',
-    textAlign: 'center',
-    textDecorationLine: 'underline',
   },
 });
