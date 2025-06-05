@@ -1,4 +1,5 @@
-import { Button, Platform, StyleSheet, useWindowDimensions, Image } from 'react-native';
+import React, { useEffect, useRef  } from 'react';
+import { Button, Platform, StyleSheet, useWindowDimensions, Image, Animated, Easing } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useRouter } from 'expo-router';
 import { useResponsiveImageDimensions } from './hooks/useResponsiveImageDimensions';
@@ -13,6 +14,26 @@ export default function TabOnecreen() {
     heightRatio: 0.2,
     maintainAspectRatio: true,
   });
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.1,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   const { width: imageWidth2, height: imageHeight2 } = useResponsiveImageDimensions({
     source: require('../assets/images/TWlogo.png'),
@@ -21,29 +42,40 @@ export default function TabOnecreen() {
     maintainAspectRatio: true,
   });
 const router = useRouter();
+useEffect(() => {
+    const timer = setTimeout(() => {
+      router.replace('/inicioSesion'); // ⚠️ Asegurate que esta ruta coincida
+    }, 3000); // 5000 milisegundos = 5 segundos
+
+    return () => clearTimeout(timer); // limpieza
+  }, []);
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
       <Image
         source={require('../assets/images/faceID.png')}
         style={{
-          width: imageWidth1,
-          height: imageHeight1,
+          width: imageWidth1 * 0.5,
+          height: imageHeight1 * 0.5,
           resizeMode: 'contain',
-          marginTop: 20,
+          marginBottom: 100,
         }}
       />
 
-      <Image
+      <Animated.Image
         source={require('../assets/images/TWlogo.png')}
-        style={{
-          width: imageWidth2,
-          height: imageHeight2,
-          resizeMode: 'contain',
-          marginTop: 20,
-        }}
+        style={[styles.logo, { transform: [{ scale: scaleAnim }] }]}
+        resizeMode="contain"
       />
     </View>
   );
+}
+const styles = StyleSheet.create({
+    logo: {
+  width: 500,
+  height: 500,
+},
+})
+
   
   /*const [aspectRatio, setAspectRatio] = useState(1);
   const [imageWidth, setImageWidth] = useState(screenWidth * 0.738);
@@ -115,4 +147,3 @@ const router = useRouter();
       />
     </View>
   );*/
-}
