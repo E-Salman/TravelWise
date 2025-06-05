@@ -4,7 +4,7 @@ import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
 
 
-export default function TabOneScreen() {
+export default function olvideContraScreen(){
   return (
     <View style={styles.header}>{/* Header: logo + título */}
           <Image 
