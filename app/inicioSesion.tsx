@@ -8,8 +8,6 @@ import { Text, View } from '@/components/Themed';
 import { useResponsiveDimensions } from './hooks/useResponsiveDimensions';
 import { useResponsiveImageDimensions } from './hooks/useResponsiveImageDimensions';
 
-
-
 export default function TabTwoScreen() {
   const [email, setEmail] = useState('');
   const [contrasenia, setContrasenia] = useState('');
@@ -17,41 +15,37 @@ export default function TabTwoScreen() {
   const router = useRouter();
 
   const { width: viewWidth, height: viewHeight } = useResponsiveDimensions({
-    heightRatio: 0.2,
+    heightRatio: 0.1,
     widthRatio: 1
   });
 
   const {width: logoWidth, height: logoHeight } = useResponsiveImageDimensions({
-    source: require('../assets/images/TWlogo.png'),
-    heightRatio: 0.4,
-    widthRatio: 0.2,
+    source: require('../../assets/images/TWlogo.png'),
+    heightRatio: 0.3,
+    widthRatio: 0.3,
     maintainAspectRatio: true
   });
-  const { height: buttonHeight } = useResponsiveDimensions({
-  heightRatio: 0.07, // 7% de pantalla
-});
-  
   
   //falta cambiar los estilos para que todas las alturas y anchos sean en base a un % del contenedor en el que estan, asi los hooks las ajustan automaticamente.
   //tambien mover inicio de sesion fuera de tabs, no deberia tener un layout (el menu de abajito), pero eso es mi opinion
 
   return (
-    <View style={styles.container}>
+    <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, width: viewWidth, height: viewHeight }}>
       <View style={styles.header}>{/* Header: logo + título */}
         <Image
-          source={require('../assets/images/TWlogo.png')}
+          source={require('../../assets/images/TWlogo.png')}
           style={{
             width: logoWidth,
             height: logoHeight,
             resizeMode: 'contain',
-            marginBottom: 10,
+            marginTop: 20,
         }}
       />
         <Text style={styles.title}>Inicio de sesion</Text>
 
       </View>
       {/* Ingreso texto */}
-      <View style={styles.form}>
+      <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, width: viewWidth, height: viewHeight }}>
         {/* Email */}
         <Text style={styles.email}>Email</Text>
         <TextInput
@@ -74,13 +68,11 @@ export default function TabTwoScreen() {
           keyboardType='default'
         />
         {/* Boton Ingresar */}
-        <Link href="/(tabs)/paginaInicio" asChild>
+        <Link href="/paginaInicio" asChild>
           <Pressable style={styles.botonIngresa}>
             <Text style={styles.ingresar}>Ingresar</Text>
           </Pressable>
         </Link>
-
-      
         {/* Recordar usuario */}
         <Pressable
           style={styles.enFila}
@@ -94,18 +86,16 @@ export default function TabTwoScreen() {
         </Pressable>
 
         {/* Olvidaste tu contraseña texto clickeable */}
-        <Pressable onPress={() => router.push('/(tabs)/olvideContra')}>
+        <Pressable onPress={() => router.push('/olvideContra')}>
           <Text style={styles.olvidasteContra}>Olvidaste tu contraseña?</Text>
         </Pressable>
-        </View>
+      </View>
 
-      <View style={styles.registro}>
       <Text style={styles.regiTexto}>¿No tenes cuenta?</Text>
-      <Pressable onPress={() => router.push('/(tabs)/registrarse')}>
+      <Pressable onPress={() => router.push('/registrarse')}>
         <Text style={styles.registrarse}>Registrate</Text>
       </Pressable>
-      </View>
-      </View>
+    </View>
   );
 }
 
@@ -114,68 +104,66 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingVertical: 30,
-    paddingHorizontal: 20,
-    marginTop: 70,
+    paddingTop: 40,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
   },
-
-  form: {
-  width: 250,
-  alignItems: 'stretch',
-  marginBottom: 30,
-},
-
   title: {
     fontSize: 25,
     fontWeight: 'bold',
     color: '#093659',
-    marginBottom: '2%',
+    marginBottom: 10,
   },
-
+  logo: {
+    width: 200,
+    height: 200,
+    resizeMode: 'contain',
+    marginBottom: 16
+  },
+  form: {
+    width: '35%',
+    alignItems: 'flex-start',
+  },
   email: {
     fontSize: 15,
     color: '#1E1E1E',
-    marginBottom: '1%',
+    marginBottom: 5,
 
   },
   emailInput: {
     width: '100%',
-    height: 30,
+    height: 40,
     borderColor: '#1E1E1E',
     borderWidth: 1,
     borderRadius: 4,
-    paddingHorizontal: '8%',
-    marginBottom: '5%',
+    paddingHorizontal: 8,
+    marginBottom: 10,
   },
 
   contrasenia: {
     fontSize: 15,
     color: '#1E1E1E',
-    marginBottom: '1%',
+    marginBottom: 5,
   },
 
   contraseniaInput: {
     width: '100%',
-    height: 30,
+    height: 40,
     borderColor: '#1E1E1E',
     borderWidth: 1,
     borderRadius: 4,
-    paddingHorizontal: '8%',
-    marginBottom: '10%',
+    paddingHorizontal: 8,
+    marginBottom: 10,
   },
 
   botonIngresa: {
-    width: '100%', 
-    height: 35,
+    width: '100%',
     backgroundColor: '#093659',
+    padding: 12,
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: '10%',
   },
   ingresar: { color: '#fff', fontSize: 16 },
 
@@ -183,23 +171,19 @@ const styles = StyleSheet.create({
     color: '#1E1E1E',
     fontSize: 16,
     textDecorationLine: 'underline',
-    marginBottom: '1%'
+    marginBottom: 30
   },
 
   enFila: {
     flexDirection: 'row',      // elemento al lado del otro
     alignItems: 'center',      // centra verticalmente
   },
-registro: {
-  marginTop: 30,
-  alignItems: 'center',
-},
   cajita: {
-    width: 12,
-    height: 12,
+    width: 14,
+    height: 14,
     borderWidth: 2,
     borderColor: '#093659',
-    borderRadius: 0,
+    borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
@@ -209,7 +193,7 @@ registro: {
     borderColor: '#093659',
   },
   recordarme: {
-    marginLeft: '1%',
+    marginLeft: 8,
     fontSize: 14,
     color: '#1E1E1E',
   },
