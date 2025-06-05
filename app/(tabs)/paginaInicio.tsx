@@ -3,7 +3,7 @@ import { StyleSheet, Image} from 'react-native';
 import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
 
-export default function TabOneScreen() {
+export default function PaginaInicioScreen() {
   return (
     <View style={styles.header}>{/* Header: logo + título */}
           <Image 
