@@ -187,8 +187,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   backIcon: {
-    width: 20,
-    height: 20,
+    width: 30,
+    height: 30,
     marginRight: 10,
     resizeMode: 'contain',
   },
