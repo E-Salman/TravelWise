@@ -2,14 +2,17 @@ import React from 'react';
 import { useColorScheme } from '@/components/useColorScheme';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons'; // or 'react-native-vector-icons/Ionicons'
-import home from './home';
-import perfil from './perfil';
-import chat from './chat';
-import menu from './menu';
+import home from './tabs/home';
+import perfil from './tabs/perfil';
+import chat from './tabs/chat';
+import menu from './tabs/menu';
 import { View } from 'react-native';
+import paginasStack from './paginasStack';
+import { TabsParamList } from '../types/navigation';
+
+const Tab = createBottomTabNavigator<TabsParamList>();
 
 export default function TabsLayout() {
-  const colorScheme = useColorScheme() ?? 'light';
   const Tab = createBottomTabNavigator();
 
   return (
@@ -17,7 +20,7 @@ export default function TabsLayout() {
       screenOptions={({ route }) => ({
         tabBarActiveTintColor: '#1a3d63',   // Active icon color
         tabBarInactiveTintColor: '#131726', // Inactive icon color
-        tabBarShowLabel: false,        
+        tabBarShowLabel: false,
         headerStyle: {
           elevation: 0, // ✅ Android: remove shadow
           shadowOpacity: 0, // ✅ iOS: remove shadow
@@ -63,6 +66,15 @@ export default function TabsLayout() {
       <Tab.Screen name="Perfil" component={perfil} />
       <Tab.Screen name="Chat" component={chat} />
       <Tab.Screen name="Menu" component={menu} />
+
+      <Tab.Screen
+        name="Paginas"
+        component={paginasStack}
+        options={{
+          tabBarButton: () => null,
+        }}
+      />
+
     </Tab.Navigator>
   );
 }

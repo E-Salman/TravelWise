@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-export default function CrearViajeScreen() {
+export default function crearViajeScreen() {
   const router = useRouter();
 
   const [origen, setOrigen] = useState('');

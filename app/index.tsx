@@ -41,6 +41,7 @@ export default function TabOnecreen() {
     heightRatio: 0.5,
     maintainAspectRatio: true,
   });
+
 const router = useRouter();
 useEffect(() => {
     const timer = setTimeout(() => {
@@ -49,6 +50,7 @@ useEffect(() => {
 
     return () => clearTimeout(timer); // limpieza
   }, []);
+  
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
       <Image

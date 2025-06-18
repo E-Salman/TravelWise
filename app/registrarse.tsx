@@ -8,7 +8,7 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { Text, View } from '@/components/Themed';
 
 // Simulación de base de datos de emails ya registrados
@@ -120,10 +120,11 @@ export default function RegistroScreen() {
         placeholder="*******"
         placeholderTextColor="#ABA5A4"
       />
-
-      <Pressable style={styles.boton} onPress={handleRegistro}>
-        <Text style={styles.botonTexto}>Registrarse</Text>
-      </Pressable>
+      <Link href="/inicioSesion" asChild>
+        <Pressable style={styles.boton} onPress={handleRegistro}>
+          <Text style={styles.botonTexto}>Registrarse</Text>
+        </Pressable>
+      </Link>
     </View>
     //<Alert style={styles.alerta}
 
