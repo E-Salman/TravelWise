@@ -46,7 +46,7 @@ export default function RegistroScreen() {
     }
 
     showAlert('Éxito', '¡Registro exitoso!');
-    router.replace('/logueado/home');
+    router.replace('/logueado/tabs/home');
   };
 
   return (
