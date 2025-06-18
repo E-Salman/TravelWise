@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { Text, View } from '@/components/Themed';
+import { registerUser } from '../app/auth/registerUser';
 
 // Simulación de base de datos de emails ya registrados
 const emailsRegistrados = ['usuario1@email.com', 'ejemplo@dominio.com'];
@@ -22,7 +23,7 @@ export default function RegistroScreen() {
   const [repetirContra, setRepetirContra] = useState('');
   const router = useRouter();
 
-  const handleRegistro = () => {
+  const handleRegistro = async () => {
     const showAlert = (titulo: string, msj: string) => {
     if (Platform.OS === 'web') {
       window.alert(`${titulo}\n${msj}`);
@@ -39,14 +40,25 @@ export default function RegistroScreen() {
       showAlert('Error', 'Las contraseñas no coinciden.');
       return;
     }
-
-    if (emailsRegistrados.includes(email.toLowerCase())) {
-      showAlert('Error', 'Este email ya está registrado.');
-      return;
-    }
+    try {
+    await registerUser({
+      email: email,
+      password: contrasenia,
+      userData: {
+        nombre: nombre,
+        telefono: telefono,
+      },
+    });
 
     showAlert('Éxito', '¡Registro exitoso!');
     router.replace('/logueado/tabs/home');
+
+  } catch (error: any) {
+    console.error(error);
+    showAlert('Error', error.message || 'No se pudo registrar.');
+  }
+
+    
   };
 
   return (
