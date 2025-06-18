@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Platform,
   StyleSheet,
   Image,
   TextInput,
@@ -22,23 +23,30 @@ export default function RegistroScreen() {
   const router = useRouter();
 
   const handleRegistro = () => {
+    const showAlert = (titulo: string, msj: string) => {
+    if (Platform.OS === 'web') {
+      window.alert(`${titulo}\n${msj}`);
+    } else {
+      Alert.alert(titulo, msj);
+    }
+  };
     if (!nombre || !email || !telefono || !contrasenia || !repetirContra) {
-      Alert.alert('Error', 'Por favor, completá todos los campos.');
+      showAlert('Error', 'Por favor, completá todos los campos.');
       return;
     }
 
     if (contrasenia !== repetirContra) {
-      Alert.alert('Error', 'Las contraseñas no coinciden.');
+      showAlert('Error', 'Las contraseñas no coinciden.');
       return;
     }
 
     if (emailsRegistrados.includes(email.toLowerCase())) {
-      Alert.alert('Error', 'Este email ya está registrado.');
+      showAlert('Error', 'Este email ya está registrado.');
       return;
     }
 
-    Alert.alert('Éxito', '¡Registro exitoso!');
-    router.replace('/inicioSesion');
+    showAlert('Éxito', '¡Registro exitoso!');
+    router.replace('/logueado/home');
   };
 
   return (
@@ -117,6 +125,8 @@ export default function RegistroScreen() {
         <Text style={styles.botonTexto}>Registrarse</Text>
       </Pressable>
     </View>
+    //<Alert style={styles.alerta}
+
   );
 }
 const styles = StyleSheet.create({
@@ -181,4 +191,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+
+  
 });

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Image, TextInput, Pressable } from 'react-native';
+import { StyleSheet, Image, TextInput, Pressable, Dimensions, useWindowDimensions } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { MaterialIcons, Feather, AntDesign } from '@expo/vector-icons';
 
@@ -23,6 +23,12 @@ const [usuario, setUsuario] = useState({ //todos esos datos son placeholders,
   mail: 'FL429@hotmail.com',
   avatarUrl: 'https://avatars.dicebear.com/api/adventurer/usuario123.svg',
 });
+
+const { width, height } = useWindowDimensions();
+const avatarSize =  Math.min(width, height) * 0.3; // Por ejemplo: 30% del ancho
+const nombreFontSize = Math.min(width * 0.06, height * 0.04); // 6% del ancho
+const ciudadFontSize = Math.min(width * 0.045, height * 0.03);
+const mailFontSize = Math.min(width * 0.045, height * 0.03);
 
 useEffect(() => {
   const obtenerDatos = async () => {
@@ -65,14 +71,15 @@ return (
     <View style={styles.container}>
       <View style={styles.cabeceraPerfil}>
         <Text style={styles.perfiltxt}>Perfil</Text>
-        <Image source={{ uri: usuario.avatarUrl }} style={styles.fotoPerfil} />
+        <Image source={{ uri: usuario.avatarUrl }} style={[styles.fotoPerfil, {width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }]} />
         <View style={styles.infoUsuario}>
-          <Text style={styles.nombre}>{usuario.nombre}</Text>
-          <Text style={styles.ciudad}>Ciudad: {usuario.ciudad}</Text>
-          <Text style={styles.mail}>Mail: {usuario.mail}</Text>
+          <Text style={[styles.nombre, { fontSize: nombreFontSize }]}>{usuario.nombre}</Text>
+          <Text style={[styles.ciudad, { fontSize: ciudadFontSize }]}>Ciudad: {usuario.ciudad}</Text>
+          <Text style={[styles.mail, { fontSize: mailFontSize }]}>Mail: {usuario.mail}</Text>
         </View>
       </View>
       {/* Opciones y acciones del perfil */}
+       <View style={styles.perfilMedio}>
       <View style={styles.cajitasMellizas}>
         <Pressable style={styles.cajitasM} onPress={() => router.push('../logueado')}>
           <Text style={styles.valorCajita}>28</Text>
@@ -83,11 +90,13 @@ return (
           <Text style={styles.nombreCajita}>Amigos</Text>
         </Pressable>
       </View>
+      
 
       <Pressable style={styles.invitarAmichisCajita} onPress={() => router.push('../logueado')}>
         <Text style={styles.invitarAmichis}>Invitar amigos</Text>
         <Feather name="plus-circle" size={24} color="#093659" />
       </Pressable>
+      </View>
 
       <View style={styles.opciones}>
         <Pressable style={styles.accion} onPress={() => router.push('../logueado')}>
@@ -130,45 +139,51 @@ const styles = StyleSheet.create({
     },
 
     cabeceraPerfil: {
+      flex: 3,
       backgroundColor: '#dbeafe',
       borderRadius: 12,
       paddingHorizontal: 16,
-      paddingVertical: 84,
-      minHeight: 150,
       flexDirection: 'row',
       alignItems: 'center',
       marginHorizontal: 16,
     },
+    perfilMedio: {
+      flex: 2,
+      justifyContent: 'center',
+    },
 
     fotoPerfil:{
-      width: 200,
-      height: 200,
-      borderRadius: 100,
-      marginRight: 16,
+      marginVertical: 10,
       backgroundColor: '#DCE9F9',
-      marginLeft: 125
+      //width: 200,
+      //height: 200,
+      //borderRadius: 100,
+      //marginRight: 16,
+      //backgroundColor: '#DCE9F9',
+      //marginLeft: 125
     },
 
     infoUsuario:{
-      flex: 1,
-      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 10,
+      //justifyContent: 'center',
       backgroundColor: '#DCE9F9',
     },
 
     nombre:{
-      fontSize: 25,
+      //fontSize: 25,
       fontWeight: 'bold',
       color: '#093659',
     },
 
     ciudad:{
-      fontSize: 22,
+      //fontSize: 22,
       fontWeight: 'bold',
       color: '#093659',
     },
 
     mail:{
-      fontSize: 22,
+      //fontSize: 22,
       fontWeight: 'bold',
       color: '#093659',
     },
@@ -212,11 +227,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   opciones: {
+    flex: 1.5,
     borderTopWidth: 1,
     borderTopColor: '#ccc',
     paddingTop: 12,
     paddingHorizontal: 16,
-    marginTop: 90
   },
   accion: {
     flexDirection: 'row',
