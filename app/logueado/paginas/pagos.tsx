@@ -3,9 +3,9 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView } from 'react-native';
 
 const paymentMethods = [
-  { id: 1, img: require('../../assets/images/Tarjetas.png'), alt: 'Tarjetas' },
-  { id: 2, img: require('../../assets/images/ModoMedioDePago.png'), alt: 'Modo Medio de Pago' },
-  { id: 3, img: require('../../assets/images/MercadoPago.png'), alt: 'Mercado Pago' },
+  { id: 1, img: require('../../../assets/images/Tarjetas.png'), alt: 'Tarjetas' },
+  { id: 2, img: require('../../../assets/images/ModoMedioDePago.png'), alt: 'Modo Medio de Pago' },
+  { id: 3, img: require('../../../assets/images/MercadoPago.png'), alt: 'Mercado Pago' },
 ];
 
 

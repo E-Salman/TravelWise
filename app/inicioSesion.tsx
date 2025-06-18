@@ -7,31 +7,32 @@ import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
 import { useResponsiveDimensions } from './hooks/useResponsiveDimensions';
 import { useResponsiveImageDimensions } from './hooks/useResponsiveImageDimensions';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from './types/navigation';
 
 
 
 export default function TabTwoScreen() {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [email, setEmail] = useState('');
   const [contrasenia, setContrasenia] = useState('');
   const [checked, setChecked] = useState(false);
   const router = useRouter();
 
-  const { width: viewWidth, height: viewHeight } = useResponsiveDimensions({
-    heightRatio: 0.2,
-    widthRatio: 1
-  });
-
-  const {width: logoWidth, height: logoHeight } = useResponsiveImageDimensions({
+  const { width: logoWidth, height: logoHeight } = useResponsiveImageDimensions({
     source: require('../assets/images/TWlogo.png'),
     heightRatio: 0.4,
     widthRatio: 0.2,
     maintainAspectRatio: true
   });
   const { height: buttonHeight } = useResponsiveDimensions({
-  heightRatio: 0.07, // 7% de pantalla
-});
-  
-  
+    heightRatio: 0.07, // 7% de pantalla
+  });
+const handlePress = () => {
+    navigation.navigate('logueado', { screen: 'home' });
+  };
+
   //falta cambiar los estilos para que todas las alturas y anchos sean en base a un % del contenedor en el que estan, asi los hooks las ajustan automaticamente.
   //tambien mover inicio de sesion fuera de tabs, no deberia tener un layout (el menu de abajito), pero eso es mi opinion
 
@@ -45,8 +46,8 @@ export default function TabTwoScreen() {
             height: logoHeight,
             resizeMode: 'contain',
             marginBottom: 10,
-        }}
-      />
+          }}
+        />
         <Text style={styles.title}>Inicio de sesion</Text>
 
       </View>
@@ -74,13 +75,15 @@ export default function TabTwoScreen() {
           keyboardType='default'
         />
         {/* Boton Ingresar */}
-        <Link href="/(tabs)/paginaInicio" asChild>
-          <Pressable style={styles.botonIngresa}>
-            <Text style={styles.ingresar}>Ingresar</Text>
-          </Pressable>
-        </Link>
+        
+        <Pressable 
+          style={styles.botonIngresa}
+          onPress={handlePress}
+        >
+          <Text style={styles.ingresar}>Ingresar</Text>
+        </Pressable>
 
-      
+
         {/* Recordar usuario */}
         <Pressable
           style={styles.enFila}
@@ -94,18 +97,18 @@ export default function TabTwoScreen() {
         </Pressable>
 
         {/* Olvidaste tu contraseña texto clickeable */}
-        <Pressable onPress={() => router.push('/(tabs)/olvideContra')}>
+        <Pressable onPress={() => router.push('/olvideContra')}>
           <Text style={styles.olvidasteContra}>Olvidaste tu contraseña?</Text>
         </Pressable>
-        </View>
+      </View>
 
       <View style={styles.registro}>
-      <Text style={styles.regiTexto}>¿No tenes cuenta?</Text>
-      <Pressable onPress={() => router.push('/(tabs)/registrarse')}>
-        <Text style={styles.registrarse}>Registrate</Text>
-      </Pressable>
+        <Text style={styles.regiTexto}>¿No tenes cuenta?</Text>
+        <Pressable onPress={() => router.push('/registrarse')}>
+          <Text style={styles.registrarse}>Registrate</Text>
+        </Pressable>
       </View>
-      </View>
+    </View>
   );
 }
 
@@ -116,7 +119,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     paddingVertical: 30,
     paddingHorizontal: 20,
-    marginTop: 70,
   },
   header: {
     alignItems: 'center',
@@ -124,10 +126,10 @@ const styles = StyleSheet.create({
   },
 
   form: {
-  width: 250,
-  alignItems: 'stretch',
-  marginBottom: 30,
-},
+    width: 250,
+    alignItems: 'stretch',
+    marginBottom: 30,
+  },
 
   title: {
     fontSize: 25,
@@ -169,7 +171,7 @@ const styles = StyleSheet.create({
   },
 
   botonIngresa: {
-    width: '100%', 
+    width: '100%',
     height: 35,
     backgroundColor: '#093659',
     borderRadius: 6,
@@ -190,10 +192,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',      // elemento al lado del otro
     alignItems: 'center',      // centra verticalmente
   },
-registro: {
-  marginTop: 30,
-  alignItems: 'center',
-},
+  registro: {
+    marginTop: 30,
+    alignItems: 'center',
+  },
   cajita: {
     width: 12,
     height: 12,

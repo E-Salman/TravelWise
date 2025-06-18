@@ -2,8 +2,8 @@ import { StyleSheet, Image} from 'react-native';
 
 import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
-import { useResponsiveDimensions } from '../hooks/useResponsiveDimensions';
-import { useResponsiveImageDimensions } from '../hooks/useResponsiveImageDimensions';
+import { useResponsiveDimensions } from '../../hooks/useResponsiveDimensions';
+import { useResponsiveImageDimensions } from '../../hooks/useResponsiveImageDimensions';
 
 export default function TabOneScreen() {
   const { width: viewWidth, height: viewHeight } = useResponsiveDimensions({
@@ -13,7 +13,7 @@ export default function TabOneScreen() {
     });
     
   const { width: imageWidth1, height: imageHeight1 } = useResponsiveImageDimensions({
-      source: require('../../assets/images/TWlogo.png'),
+      source: require('../../../assets/images/TWlogo.png'),
       widthRatio: 1,
       heightRatio: 0.6,
       maintainAspectRatio: true,
@@ -28,12 +28,12 @@ export default function TabOneScreen() {
         height: viewHeight
       }}>
       <Image
-        source={require('../../assets/images/TWlogo.png')}
+        source={require('../../../assets/images/TWlogo.png')}
         style={{
           width: imageWidth1,
           height: imageHeight1          
         }}/>
-      <Text style={styles.title}>HOME</Text> 
+      <Text style={styles.title}>CHAT PH</Text>
     </View>
   );
 }
