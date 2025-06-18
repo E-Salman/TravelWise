@@ -29,7 +29,9 @@ export default function TabsLayout() {
         tabBarStyle: {
           height: 60,
           backgroundColor: '#81A3BE',
-          paddingBottom: 0
+          paddingBottom: 0,
+          display: 'flex',
+          justifyContent: 'center',
         },
         tabBarItemStyle: {
           flex: 1,
@@ -72,6 +74,9 @@ export default function TabsLayout() {
         component={paginasStack}
         options={{
           tabBarButton: () => null,
+          tabBarItemStyle: {
+            display: 'none', // Completely remove from layout
+          },
         }}
       />
 
