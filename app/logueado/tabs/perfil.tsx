@@ -4,17 +4,17 @@ import { Link, useRouter } from 'expo-router';
 import { MaterialIcons, Feather, AntDesign } from '@expo/vector-icons';
 
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 
 
 import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
-import { useResponsiveDimensions } from '../hooks/useResponsiveDimensions';
-import { useResponsiveImageDimensions } from '../hooks/useResponsiveImageDimensions';
+import { useResponsiveDimensions } from '../../hooks/useResponsiveDimensions';
+import { useResponsiveImageDimensions } from '../../hooks/useResponsiveImageDimensions';
 
 export default function PerfilScreen() {
 
-  const router = useRouter();
+const router = useRouter();
   
 const [usuario, setUsuario] = useState({ //todos esos datos son placeholders, 
                                         //dejarlos como ''
