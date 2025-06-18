@@ -36,7 +36,7 @@ export default function TabOneScreen() {
           height: imageHeight1
         }} />
         
-        <Button
+      <Button
         title="Go to Crear Viaje"
         onPress={() => (navigation as any).navigate('Paginas', { screen: 'crearviaje' })}
       />

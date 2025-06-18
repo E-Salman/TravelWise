@@ -29,7 +29,7 @@ export default function TabTwoScreen() {
   const { height: buttonHeight } = useResponsiveDimensions({
     heightRatio: 0.07, // 7% de pantalla
   });
-const handlePress = () => {
+  const handlePress = () => {
     navigation.navigate('logueado', { screen: 'home' });
   };
 
