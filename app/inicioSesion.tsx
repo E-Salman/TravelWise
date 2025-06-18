@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, Image, TextInput, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Image, TextInput, Pressable, Alert, Platform } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -8,17 +8,33 @@ import { Text, View } from '@/components/Themed';
 import { useResponsiveDimensions } from './hooks/useResponsiveDimensions';
 import { useResponsiveImageDimensions } from './hooks/useResponsiveImageDimensions';
 import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types/navigation';
+import { loginUser } from '../app/auth/loginUser';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
 export default function TabTwoScreen() {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [email, setEmail] = useState('');
   const [contrasenia, setContrasenia] = useState('');
   const [checked, setChecked] = useState(false);
   const router = useRouter();
+  useEffect(() => {
+  const loadRememberedUser = async () => {
+    const savedEmail = await AsyncStorage.getItem('userEmail');
+    const savedContra = await AsyncStorage.getItem('userContra');
+    if (savedEmail && savedContra) {
+      setEmail(savedEmail);
+      setContrasenia(savedContra)
+      setChecked(true);
+    }
+  };
+
+  loadRememberedUser();
+}, []);
+
 
   const { width: logoWidth, height: logoHeight } = useResponsiveImageDimensions({
     source: require('../assets/images/TWlogo.png'),
@@ -29,9 +45,32 @@ export default function TabTwoScreen() {
   const { height: buttonHeight } = useResponsiveDimensions({
     heightRatio: 0.07, // 7% de pantalla
   });
-const handlePress = () => {
+const handlePress = async () => {
+     try {
+    // Llama a tu helper de Firebase
+    const user = await loginUser(email, contrasenia);
+
+    if (checked) {
+      await AsyncStorage.setItem('userEmail', email);
+      await AsyncStorage.setItem('userContra', contrasenia);
+    } else {
+      await AsyncStorage.removeItem('userEmail');
+      await AsyncStorage.removeItem('userContra');
+    }
+    
+    await AsyncStorage.setItem('userUID', user.uid);
+
+    // Redirige a la pantalla principal
     navigation.navigate('logueado', { screen: 'home' });
-  };
+  } catch (error: any) {
+    console.error(error);
+    if (Platform.OS === 'web') {
+      window.alert(`Error: ${error.message || 'No se pudo iniciar sesión.'}`);
+    } else {
+      Alert.alert('Error', error.message || 'No se pudo iniciar sesión.');
+    }
+  }
+};
 
   //falta cambiar los estilos para que todas las alturas y anchos sean en base a un % del contenedor en el que estan, asi los hooks las ajustan automaticamente.
   //tambien mover inicio de sesion fuera de tabs, no deberia tener un layout (el menu de abajito), pero eso es mi opinion

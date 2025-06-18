@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Platform,
   StyleSheet,
   Image,
   TextInput,
@@ -9,6 +10,7 @@ import {
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { Text, View } from '@/components/Themed';
+import { registerUser } from '../app/auth/registerUser';
 
 // Simulación de base de datos de emails ya registrados
 const emailsRegistrados = ['usuario1@email.com', 'ejemplo@dominio.com'];
@@ -21,24 +23,42 @@ export default function RegistroScreen() {
   const [repetirContra, setRepetirContra] = useState('');
   const router = useRouter();
 
-  const handleRegistro = () => {
+  const handleRegistro = async () => {
+    const showAlert = (titulo: string, msj: string) => {
+    if (Platform.OS === 'web') {
+      window.alert(`${titulo}\n${msj}`);
+    } else {
+      Alert.alert(titulo, msj);
+    }
+  };
     if (!nombre || !email || !telefono || !contrasenia || !repetirContra) {
-      Alert.alert('Error', 'Por favor, completá todos los campos.');
+      showAlert('Error', 'Por favor, completá todos los campos.');
       return;
     }
 
     if (contrasenia !== repetirContra) {
-      Alert.alert('Error', 'Las contraseñas no coinciden.');
+      showAlert('Error', 'Las contraseñas no coinciden.');
       return;
     }
+    try {
+    await registerUser({
+      email: email,
+      password: contrasenia,
+      userData: {
+        nombre: nombre,
+        telefono: telefono,
+      },
+    });
 
-    if (emailsRegistrados.includes(email.toLowerCase())) {
-      Alert.alert('Error', 'Este email ya está registrado.');
-      return;
-    }
+    showAlert('Éxito', '¡Registro exitoso!');
+    router.replace('/logueado/tabs/home');
 
-    Alert.alert('Éxito', '¡Registro exitoso!');
-    router.replace('/inicioSesion');
+  } catch (error: any) {
+    console.error(error);
+    showAlert('Error', error.message || 'No se pudo registrar.');
+  }
+
+    
   };
 
   return (
@@ -118,6 +138,8 @@ export default function RegistroScreen() {
         </Pressable>
       </Link>
     </View>
+    //<Alert style={styles.alerta}
+
   );
 }
 const styles = StyleSheet.create({
@@ -182,4 +204,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+
+  
 });
