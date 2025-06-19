@@ -3,11 +3,11 @@ import { StyleSheet, Image, TextInput, Pressable, Dimensions, useWindowDimension
 import { Link, useRouter } from 'expo-router';
 import { MaterialIcons, Feather, AntDesign } from '@expo/vector-icons';
 
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { logoutUser } from '../../../app/auth/logoutUser'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getAuth } from "firebase/auth";
+import { getAuth, deleteUser } from "firebase/auth";
 
 import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
@@ -18,7 +18,9 @@ export default function PerfilScreen() {
 
 const router = useRouter();
 
-  
+const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);  
+const [mostrarConfirmacionEliminar, setMostrarConfirmacionEliminar] = useState(false);
+
 const [usuario, setUsuario] = useState({ //todos esos datos son placeholders, 
                                         //dejarlos como ''
   nombre: '',
@@ -100,10 +102,36 @@ const cerrarSesion = async () => {
   }
   };
 
-  const eliminarCuenta = () => {
-    console.log('Cuenta eliminada de la base de datos')
-    router.replace('/');
-  };
+
+  const eliminarCuenta = async () => {
+  try {
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+
+    if (currentUser) {
+      const uid = currentUser.uid;
+
+      // 1️⃣ Eliminar documento Firestore
+      await deleteDoc(doc(db, 'users', uid));
+      console.log("Documento Firestore eliminado");
+
+      // 2️⃣ Eliminar usuario Auth
+      await deleteUser(currentUser);
+      console.log("Usuario Auth eliminado");
+
+      // 3️⃣ Limpiar AsyncStorage
+      await AsyncStorage.removeItem('userEmail');
+      await AsyncStorage.removeItem('userUID');
+
+      // 4️⃣ Redirigir
+      router.replace('/');
+    } else {
+      console.log("No hay usuario autenticado");
+    }
+  } catch (error) {
+    console.error("Error al eliminar cuenta:", error);
+  }
+};
 
 return (
     <View style={styles.container}>
@@ -150,16 +178,43 @@ return (
           <Text style={styles.opcionTxt}>Configuración</Text>
         </Pressable>
 
-        <Pressable style={styles.accion} onPress={cerrarSesion}>
+        <Pressable style={styles.accion} onPress={() => setMostrarConfirmacion(true)}>
           <MaterialIcons name="logout" size={20} color="#1E1E1E" />
           <Text style={styles.opcionTxt}>Cerrar sesión</Text>
         </Pressable>
 
-        <Pressable style={styles.eliminar} onPress={eliminarCuenta}>
+        <Pressable style={styles.eliminar} onPress={() => setMostrarConfirmacionEliminar(true)}>
           <AntDesign name="deleteuser" size={20} color="darkred" />
           <Text style={styles.eliminarTxt}>Eliminar cuenta</Text>
-        </Pressable>
-      </View>
+      </Pressable>
+    </View>
+      {mostrarConfirmacion && (
+    <View style={styles.confirmacionContainer}>
+      <Text style={styles.confirmacionTexto}>¿Está seguro de que desea cerrar sesión?</Text>
+      <View style={styles.botonesConfirmacion}>
+      <Pressable style={styles.botonSi} onPress={cerrarSesion}>
+        <Text style={styles.textoBoton}>Sí</Text>
+      </Pressable>
+      <Pressable style={styles.botonNo} onPress={() => setMostrarConfirmacion(false)}>
+        <Text style={styles.textoBoton}>No</Text>
+      </Pressable>
+    </View>
+    </View>
+)}
+    {mostrarConfirmacionEliminar && (
+  <View style={styles.confirmacionContainer}>
+    <Text style={styles.confirmacionTexto}>¿Está seguro de que desea eliminar la cuenta?</Text>
+    <View style={styles.botonesConfirmacion}>
+      <Pressable style={styles.botonSiEliminar} onPress={eliminarCuenta}>
+        <Text style={styles.textoBoton}>Eliminar</Text>
+      </Pressable>
+      <Pressable style={styles.botonNo} onPress={() => setMostrarConfirmacionEliminar(false)}>
+        <Text style={styles.textoBoton}>Cancelar</Text>
+      </Pressable>
+    </View>
+  </View>
+)}
+  
     </View>
   );
 }
@@ -299,5 +354,59 @@ const styles = StyleSheet.create({
     color: 'darkred',
     fontWeight: 'bold',
   },
+  confirmacionContainer: {
+  backgroundColor: '#fff',
+  borderRadius: 10,
+  padding: 20,
+  marginVertical: 20,
+  alignItems: 'center',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.3,
+  shadowRadius: 4,
+  elevation: 5,
+},
+
+confirmacionTexto: {
+  fontSize: 16,
+  fontWeight: 'bold',
+  marginBottom: 16,
+  color: 'red',
+  textAlign: 'center',
+},
+
+botonesConfirmacion: {
+  flexDirection: 'row',
+  justifyContent: 'space-around',
+  width: '100%',
+},
+
+botonSi: {
+  backgroundColor: '#1E1E1E',
+  paddingVertical: 10,
+  paddingHorizontal: 20,
+  borderRadius: 8,
+  marginHorizontal: 10,
+},
+
+botonNo: {
+  backgroundColor: '#ccc',
+  paddingVertical: 10,
+  paddingHorizontal: 20,
+  borderRadius: 8,
+  marginHorizontal: 10,
+},
+
+textoBoton: {
+  color: '#fff',
+  fontWeight: 'bold',
+},
+botonSiEliminar: {
+  backgroundColor: 'darkred',
+  paddingVertical: 10,
+  paddingHorizontal: 20,
+  borderRadius: 8,
+  marginHorizontal: 10,
+},
 
 })
