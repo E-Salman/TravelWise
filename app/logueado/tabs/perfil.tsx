@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons, Feather, AntDesign } from '@expo/vector-icons';
-
+import { Picker } from '@react-native-picker/picker';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { logoutUser } from '../../../app/auth/logoutUser';
@@ -38,23 +38,31 @@ export default function PerfilScreen() {
 
   useEffect(() => {
     const obtenerDatos = async () => {
-      try {
-        let uid = await AsyncStorage.getItem('userUID');
-        if (!uid) {
-          const auth = getAuth();
-          uid = auth.currentUser?.uid || '';
-        }
-        if (!uid) return;
+  try {
+    const auth = getAuth();
+    const uid = auth.currentUser?.uid;  // 👈 Siempre usar Auth como verdad absoluta
 
-        const snap = await getDoc(doc(db, 'users', uid));
-        if (snap.exists()) {
-          const data = snap.data();
-          setUsuario(new UsuarioClass(data));
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
+    if (!uid) {
+      console.log("No user logged in.");
+      return;
+    }
+
+    // 🔑 Opcional: actualiza el UID local para asegurar coherencia
+    await AsyncStorage.setItem('userUID', uid);
+
+    const ref = doc(db, 'users', uid);
+    const snap = await getDoc(ref);
+
+    if (snap.exists()) {
+      setUsuario(new UsuarioClass(snap.data()));
+    } else {
+      console.log("No existe documento para este UID");
+    }
+
+  } catch (error) {
+    console.error("Error en obtenerDatos:", error);
+  }
+};
     obtenerDatos();
   }, []);
 
@@ -104,97 +112,102 @@ export default function PerfilScreen() {
 
   return (
     <View style={styles.container}>
-      <View
-        style={[
-          styles.cabeceraPerfil,
-          {
-            flexDirection: isWideScreen ? 'row' : 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-          },
-        ]}
-      >
-        <Pressable
-          style={{ position: 'absolute', top: 16, right: 16 }}
-          onPress={() => {
-            if (modoEdicion) {
-              guardarCambios();
-            } else {
-              setModoEdicion(true);
-            }
-          }}
-        >
-          <Feather name={modoEdicion ? 'check' : 'edit'} size={24} color="#093659" />
-        </Pressable>
 
-        <Text style={styles.perfiltxt}>Perfil</Text>
-        <Image
-          source={{
-            uri: usuario.avatarUrl || 'https://avatars.dicebear.com/api/adventurer/default.svg',
-          }}
-          style={{
-            width: avatarSize,
-            height: avatarSize,
-            borderRadius: avatarSize / 2,
-            marginRight: isWideScreen ? 40 : 0,
-            marginBottom: !isWideScreen ? 20 : 0,
-          }}
-        />
+  {/* CABECERA PERFIL */}
+  <View
+    style={[
+      styles.cabeceraPerfil,
+      {
+        flexDirection: isWideScreen ? 'row' : 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+    ]}
+  >
+    <Pressable
+      style={{ position: 'absolute', top: 16, right: 16 }}
+      onPress={() => {
+        if (modoEdicion) {
+          guardarCambios();
+        } else {
+          setModoEdicion(true);
+        }
+      }}
+    >
+      <Feather name={modoEdicion ? 'check' : 'edit'} size={24} color="#093659" />
+    </Pressable>
 
-        <View style={styles.infoUsuario}>
-          {modoEdicion ? (
-            <>
-              <TextInput
-                style={styles.input}
-                value={usuario.nombre}
-                placeholder="Nombre"
-                onChangeText={(text) => {
-                  const u = new UsuarioClass(usuario);
-                  u.nombre = text;
-                  setUsuario(u);
-                }}
-              />
-              <TextInput
-                style={styles.input}
-                value={usuario.mail}
-                placeholder="Email"
-                onChangeText={(text) => {
-                  const u = new UsuarioClass(usuario);
-                  u.mail = text;
-                  setUsuario(u);
-                }}
-              />
-              <TextInput
-                style={styles.input}
-                value={usuario.ciudad}
-                placeholder="Ciudad"
-                onChangeText={(text) => {
-                  const u = new UsuarioClass(usuario);
-                  u.ciudad = text;
-                  setUsuario(u);
-                }}
-              />
-              <TextInput
-                style={styles.input}
-                value={usuario.avatarUrl}
-                placeholder="Foto URL"
-                onChangeText={(text) => {
-                  const u = new UsuarioClass(usuario);
-                  u.avatarUrl = text;
-                  setUsuario(u);
-                }}
-              />
-            </>
-          ) : (
-            <>
-              <Text style={[styles.nombre, { fontSize: nombreFontSize }]}>{usuario.nombre}</Text>
-              <Text style={[styles.mail, { fontSize: mailFontSize }]}>Mail: {usuario.mail}</Text>
-              <Text style={[styles.ciudad, { fontSize: ciudadFontSize }]}>Ciudad: {usuario.ciudad}</Text>
-            </>
-          )}
-        </View>
-      </View>
+    <Text style={styles.perfiltxt}>Perfil</Text>
+    <Image
+      source={{
+        uri: usuario.avatarUrl || 'https://avatars.dicebear.com/api/adventurer/default.svg',
+      }}
+      style={{
+        width: avatarSize,
+        height: avatarSize,
+        borderRadius: avatarSize / 2,
+        marginRight: isWideScreen ? 40 : 0,
+        marginBottom: !isWideScreen ? 20 : 0,
+      }}
+    />
 
+    <View style={styles.infoUsuario}>
+      {modoEdicion ? (
+        <>
+          <TextInput
+            style={styles.input}
+            value={usuario.nombre}
+            placeholder="Nombre"
+            onChangeText={(text) => {
+              const u = new UsuarioClass(usuario);
+              u.nombre = text;
+              setUsuario(u);
+            }}
+          />
+          <TextInput
+            style={styles.input}
+            value={usuario.mail}
+            placeholder="Email"
+            onChangeText={(text) => {
+              const u = new UsuarioClass(usuario);
+              u.mail = text;
+              setUsuario(u);
+            }}
+          />
+          <TextInput
+            style={styles.input}
+            value={usuario.ciudad}
+            placeholder="Ciudad"
+            onChangeText={(text) => {
+              const u = new UsuarioClass(usuario);
+              u.ciudad = text;
+              setUsuario(u);
+            }}
+          />
+          <TextInput
+            style={styles.input}
+            value={usuario.avatarUrl}
+            placeholder="Foto URL"
+            onChangeText={(text) => {
+              const u = new UsuarioClass(usuario);
+              u.avatarUrl = text;
+              setUsuario(u);
+            }}
+          />
+        </>
+      ) : (
+        <>
+          <Text style={[styles.nombre, { fontSize: nombreFontSize }]}>{usuario.nombre}</Text>
+          <Text style={[styles.mail, { fontSize: mailFontSize }]}>Mail: {usuario.mail}</Text>
+          <Text style={[styles.ciudad, { fontSize: ciudadFontSize }]}>Ciudad: {usuario.ciudad}</Text>
+        </>
+      )}
+    </View>
+  </View>
+
+  {/* ✅ SI NO ESTÁ EN EDICIÓN -> PARTE BAJA NORMAL */}
+  {!modoEdicion && (
+    <>
       <View style={styles.perfilMedio}>
         <View style={styles.cajitasMellizas}>
           <Pressable style={styles.cajitasM} onPress={() => router.push('../logueado')}>
@@ -229,43 +242,99 @@ export default function PerfilScreen() {
           <Text style={styles.eliminarTxt}>Eliminar cuenta</Text>
         </Pressable>
       </View>
+    </>
+  )}
 
-      {mostrarConfirmacion && (
-        <View style={styles.confirmacionContainer}>
-          <Text style={styles.confirmacionTexto}>¿Está seguro de que desea cerrar sesión?</Text>
-          <View style={styles.botonesConfirmacion}>
-            <Pressable style={styles.botonSi} onPress={cerrarSesion}>
-              <Text style={styles.textoBoton}>Sí</Text>
-            </Pressable>
-            <Pressable
-              style={styles.botonNo}
-              onPress={() => setMostrarConfirmacion(false)}
-            >
-              <Text style={styles.textoBoton}>No</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
+  {/* ✅ SI ESTÁ EN EDICIÓN -> MOSTRAR SELECTORES DE PREFERENCIAS */}
+  {modoEdicion && (
+    <View style={{ marginTop: 20 }}>
+      <Text>Visibilidad de datos</Text>
+      <Picker
+        selectedValue={usuario.visibilidad}
+        onValueChange={(v) => {
+          const u = new UsuarioClass(usuario);
+          u.visibilidad = v;
+          setUsuario(u);
+        }}
+      >
+        <Picker.Item label="Cualquiera" value="Cualquiera" />
+        <Picker.Item label="Amigos" value="Amigos" />
+        <Picker.Item label="Solo yo" value="Solo yo" />
+      </Picker>
 
-      {mostrarConfirmacionEliminar && (
-        <View style={styles.confirmacionContainer}>
-          <Text style={styles.confirmacionTexto}>
-            ¿Está seguro de que desea eliminar la cuenta?
-          </Text>
-          <View style={styles.botonesConfirmacion}>
-            <Pressable style={styles.botonSiEliminar} onPress={eliminarCuenta}>
-              <Text style={styles.textoBoton}>Eliminar</Text>
-            </Pressable>
-            <Pressable
-              style={styles.botonNo}
-              onPress={() => setMostrarConfirmacionEliminar(false)}
-            >
-              <Text style={styles.textoBoton}>Cancelar</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
+      <Text>Sugerencias</Text>
+      <Picker
+        selectedValue={usuario.sugerencia}
+        onValueChange={(v) => {
+          const u = new UsuarioClass(usuario);
+          u.sugerencia = v;
+          setUsuario(u);
+        }}
+      >
+        <Picker.Item label="Amigos primero" value="Amigos primero" />
+        <Picker.Item label="Recomendados" value="Recomendados" />
+        <Picker.Item label="Desactivadas" value="Desactivadas" />
+      </Picker>
+
+      <Text>Preferencias</Text>
+      <Picker
+        selectedValue={usuario.preferencias}
+        onValueChange={(v) => {
+          const u = new UsuarioClass(usuario);
+          u.preferencias = v;
+          setUsuario(u);
+        }}
+      >
+        <Picker.Item label="Personalizado" value="Personalizado" />
+        <Picker.Item label="Predeterminado" value="Predeterminado" />
+      </Picker>
+
+      <Text>Notificaciones</Text>
+      <Picker
+        selectedValue={usuario.notificaciones}
+        onValueChange={(v) => {
+          const u = new UsuarioClass(usuario);
+          u.notificaciones = v;
+          setUsuario(u);
+        }}
+      >
+        <Picker.Item label="Activadas" value="Activadas" />
+        <Picker.Item label="Desactivadas" value="Desactivadas" />
+      </Picker>
     </View>
+  )}
+
+  {/* Confirmaciones */}
+  {mostrarConfirmacion && (
+    <View style={styles.confirmacionContainer}>
+      <Text style={styles.confirmacionTexto}>¿Está seguro de que desea cerrar sesión?</Text>
+      <View style={styles.botonesConfirmacion}>
+        <Pressable style={styles.botonSi} onPress={cerrarSesion}>
+          <Text style={styles.textoBoton}>Sí</Text>
+        </Pressable>
+        <Pressable style={styles.botonNo} onPress={() => setMostrarConfirmacion(false)}>
+          <Text style={styles.textoBoton}>No</Text>
+        </Pressable>
+      </View>
+    </View>
+  )}
+
+  {mostrarConfirmacionEliminar && (
+    <View style={styles.confirmacionContainer}>
+      <Text style={styles.confirmacionTexto}>¿Está seguro de que desea eliminar la cuenta?</Text>
+      <View style={styles.botonesConfirmacion}>
+        <Pressable style={styles.botonSiEliminar} onPress={eliminarCuenta}>
+          <Text style={styles.textoBoton}>Eliminar</Text>
+        </Pressable>
+        <Pressable style={styles.botonNo} onPress={() => setMostrarConfirmacionEliminar(false)}>
+          <Text style={styles.textoBoton}>Cancelar</Text>
+        </Pressable>
+      </View>
+    </View>
+  )}
+
+</View>
+
   );
 }
 
@@ -283,7 +352,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#093659',
-    marginLeft: 20,
   },
 
   cabeceraPerfil: {
@@ -291,20 +359,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#dbeafe',
     borderRadius: 12,
     paddingHorizontal: 16,
-    flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 16,
-  },
-
-  perfilMedio: {
-    flex: 2,
-    justifyContent: 'center',
-  },
-
-  fotoPerfil: {
-    marginVertical: 10,
-    backgroundColor: '#DCE9F9',
-    marginLeft: 20,
   },
 
   infoUsuario: {
@@ -317,15 +373,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#093659',
   },
-
+  mail: {
+    fontWeight: 'bold',
+    color: '#093659',
+  },
   ciudad: {
     fontWeight: 'bold',
     color: '#093659',
   },
 
-  mail: {
-    fontWeight: 'bold',
-    color: '#093659',
+  input: {
+    borderWidth: 1,
+    borderColor: '#093659',
+    borderRadius: 5,
+    padding: 10,
+    marginVertical: 5,
+    width: '80%',
+  },
+
+  perfilMedio: {
+    flex: 2,
+    justifyContent: 'center',
   },
 
   cajitasMellizas: {
@@ -447,11 +515,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
 
-  textoBoton: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-
   botonSiEliminar: {
     backgroundColor: 'darkred',
     paddingVertical: 10,
@@ -460,14 +523,29 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
 
-  // ✅ Estilo adicional para los <TextInput> de edición
-  input: {
+  textoBoton: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+
+  // ✅ Nuevo contenedor para la sección de preferencias (en edición)
+  preferenciasContainer: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+
+  pickerLabel: {
+    marginTop: 12,
+    fontWeight: 'bold',
+    color: '#093659',
+  },
+
+  picker: {
     borderWidth: 1,
     borderColor: '#093659',
     borderRadius: 5,
-    padding: 10,
     marginVertical: 5,
-    width: '80%',
   },
 });
+
 
