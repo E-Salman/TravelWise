@@ -1,8 +1,27 @@
 import { createUserWithEmailAndPassword, User } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
+import { usuario, UsuarioClass } from "../types/usuario";
 
-interface UserData {
+
+export const registerUser = async ({ email, password, userData }: 
+                                { email: string; password: string; userData: any }) => {
+  const cred = await createUserWithEmailAndPassword(auth, email, password);
+  const newUser = new UsuarioClass({
+  nombre: userData.nombre,
+  mail: email,
+  ciudad: "",
+  avatarUrl: "",
+  visibilidad: "Cualquiera",
+  sugerencia: "Amigos primero",
+  notificaciones: "Activadas",
+  });
+  await setDoc(doc(db, "users", cred.user.uid), newUser.toFirestoreObject());
+  return newUser;
+};
+
+
+/*interface UserData {
   [key: string]: any; // Adjust this if you know exact userData fields
 }
 
@@ -13,7 +32,7 @@ export const registerUser = async ({
 }: {
   email: string, 
   password: string, 
-  userData: UserData
+  userData: usuario
 }): Promise<User> => {
   try {
     // 1. Create authentication entry
@@ -21,16 +40,13 @@ export const registerUser = async ({
     
     // 2. Store additional user data in Firestore
     await setDoc(doc(db, "users", userCredential.user.uid), {
-      nombre: userData.nombre,
-      telefono: userData.telefono || "",
-      ciudad: "",
-      avatarURL: "",
-      email,
-      createdAt: new Date(),
+      ...userData,
+    mail: email,
+    createdAt: new Date()
     });
     
     return userCredential.user;
   } catch (error) {
     throw error;
   }
-};
+};*/
