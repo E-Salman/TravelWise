@@ -1,61 +1,25 @@
-import { StyleSheet, Image} from 'react-native';
+import React from 'react';
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import CustomDrawerContent from './drawer/CustomDrawerContent'; // asegúrate de que esta ruta esté bien
+import { View } from 'react-native';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
-import { useResponsiveDimensions } from '../../hooks/useResponsiveDimensions';
-import { useResponsiveImageDimensions } from '../../hooks/useResponsiveImageDimensions';
+const Drawer = createDrawerNavigator();
 
-export default function TabOneScreen() {
-  const { width: viewWidth, height: viewHeight } = useResponsiveDimensions({
-      widthRatio: 1,
-      heightRatio: 0.8,
-      maintainAspectRatio: true,      
-    });
-    
-  const { width: imageWidth1, height: imageHeight1 } = useResponsiveImageDimensions({
-      source: require('../../../assets/images/TWlogo.png'),
-      widthRatio: 1,
-      heightRatio: 0.6,
-      maintainAspectRatio: true,
-    });
-
+export default function MenuDrawer() {
   return (
-    <View style={{ 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        flex: 1,
-        width: viewWidth,
-        height: viewHeight
-      }}>
-      <Image
-        source={require('../../../assets/images/TWlogo.png')}
-        style={{
-          width: imageWidth1,
-          height: imageHeight1          
-        }}/>
-      <Text style={styles.title}>MENU</Text> 
-    </View>
+    <Drawer.Navigator
+      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      screenOptions={{
+        headerShown: false,
+        drawerType: 'front', // hace que se muestre encima
+        overlayColor: 'transparent',
+        drawerStyle: {
+          width: '80%',
+          backgroundColor: '#e6f0fa',
+        },
+      }}
+    >
+      <Drawer.Screen name="DrawerHome" component={() => <View />} />
+    </Drawer.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    alignItems: 'center',
-  },
-
-  logo: {
-    width: 400,
-    height: 400,
-    resizeMode: 'contain',
-    marginTop: 140,
-    marginBottom: 16
-  },
-
-  title: {
-    fontSize: 50,
-    fontWeight: 'bold',
-    color: '#093659',
-    marginBottom: 180,
-  },
-
-});
