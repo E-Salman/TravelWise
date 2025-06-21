@@ -87,6 +87,7 @@ export default function TabTwoScreen() {
       </View>
 
       <View style={styles.form}>
+        <View style={styles.flexibleContent}>
         <Text style={styles.email}>Email</Text>
         <TextInput
           style={styles.emailInput}
@@ -128,6 +129,7 @@ export default function TabTwoScreen() {
         <Pressable onPress={() => router.push('/registrarse')}>
           <Text style={styles.registrarse}>Registrate</Text>
         </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -137,7 +139,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     paddingVertical: 30,
     paddingHorizontal: 20,
   },
@@ -148,7 +150,8 @@ const styles = StyleSheet.create({
   form: {
     width: 250,
     alignItems: 'stretch',
-    marginBottom: 30,
+    flex: 1, // <-- Clave para ocupar espacio intermedio
+    justifyContent: 'flex-start',
   },
   title: {
     fontSize: 25,
@@ -226,7 +229,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   registro: {
-    marginTop: 30,
     alignItems: 'center',
   },
   regiTexto: {
@@ -238,4 +240,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 20,
   },
+  flexibleContent: {
+  flexGrow: 1,
+  justifyContent: 'center',
+}
 });
