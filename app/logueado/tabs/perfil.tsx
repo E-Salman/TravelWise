@@ -25,6 +25,7 @@ export default function PerfilScreen() {
   const router = useRouter();
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
   const [mostrarConfirmacionEliminar, setMostrarConfirmacionEliminar] = useState(false);
+  const [usuarioOriginal, setUsuarioOriginal] = useState(new UsuarioClass());
 
   const [usuario, setUsuario] = useState(new UsuarioClass());
   const [modoEdicion, setModoEdicion] = useState(false);
@@ -114,44 +115,56 @@ export default function PerfilScreen() {
     <View style={styles.container}>
 
   {/* CABECERA PERFIL */}
-  <View
-    style={[
-      styles.cabeceraPerfil,
-      {
-        flexDirection: isWideScreen ? 'row' : 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-      },
-    ]}
-  >
+  <View style={styles.cabeceraPerfil}>
+  {/* Título */}
+  <Text style={styles.perfiltxt}>Perfil</Text>
+
+  {/* Botones flotantes arriba a la derecha */}
+  <View style={styles.botonesEdicion}>
+    {modoEdicion && (
+      <Pressable
+        onPress={() => {
+          setUsuario(new UsuarioClass(usuarioOriginal));
+          setModoEdicion(false);
+        }}
+        style={{ marginHorizontal: 8 }}
+      >
+        <Feather name="x" size={24} color="darkred" />
+      </Pressable>
+    )}
     <Pressable
-      style={{ position: 'absolute', top: 16, right: 16 }}
       onPress={() => {
         if (modoEdicion) {
           guardarCambios();
         } else {
+          setUsuarioOriginal(new UsuarioClass(usuario));
           setModoEdicion(true);
         }
       }}
+      style={{ marginHorizontal: 8 }}
     >
-      <Feather name={modoEdicion ? 'check' : 'edit'} size={24} color="#093659" />
+      <Feather name={modoEdicion ? "check" : "edit"} size={24} color="#093659" />
     </Pressable>
+  </View>
 
-    <Text style={styles.perfiltxt}>Perfil</Text>
-    <Image
-      source={{
-        uri: usuario.avatarUrl || 'https://avatars.dicebear.com/api/adventurer/default.svg',
-      }}
-      style={{
-        width: avatarSize,
-        height: avatarSize,
-        borderRadius: avatarSize / 2,
-        marginRight: isWideScreen ? 40 : 0,
-        marginBottom: !isWideScreen ? 20 : 0,
-      }}
-    />
+  {/* Imagen de perfil */}
+  <Image
+    source={{
+      uri: usuario.avatarUrl || 'https://avatars.dicebear.com/api/adventurer/default.svg',
+    }}
+    style={{
+      width: avatarSize,
+      height: avatarSize,
+      borderRadius: avatarSize / 2,
+      marginRight: isWideScreen ? 40 : 0,
+      marginBottom: !isWideScreen ? 20 : 0,
+    }}
+  />
 
     <View style={styles.infoUsuario}>
+      <View style={{ flexDirection: 'row', marginBottom: 10 }}>
+          </View>
+  </View>
       {modoEdicion ? (
         <>
           <TextInput
@@ -203,9 +216,6 @@ export default function PerfilScreen() {
         </>
       )}
     </View>
-  </View>
-
-  {/* ✅ SI NO ESTÁ EN EDICIÓN -> PARTE BAJA NORMAL */}
   {!modoEdicion && (
     <>
       <View style={styles.perfilMedio}>
@@ -244,6 +254,7 @@ export default function PerfilScreen() {
       </View>
     </>
   )}
+
 
   {/* ✅ SI ESTÁ EN EDICIÓN -> MOSTRAR SELECTORES DE PREFERENCIAS */}
   {modoEdicion && (
@@ -546,6 +557,14 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginVertical: 5,
   },
+  botonesEdicion: {
+  position: 'absolute',
+  top: 16,
+  right: 16,
+  flexDirection: 'row',
+  gap: 12,
+  backgroundColor: 'transparent',
+},
 });
 
 
