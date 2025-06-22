@@ -1,138 +1,90 @@
 import React, { useState } from 'react';
 import {
+  View,
+  Text,
   StyleSheet,
   TextInput,
+  FlatList,
   TouchableOpacity,
-  Image,
-  ScrollView,
 } from 'react-native';
-import { View, Text } from '@/components/Themed';
-import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
-const CATEGORIAS = [
-  'Alcance',
-  'Contacto',
-  'Gestion de Acceso',
-  'Seguridad',
-  'Servicios',
-  'Soporte Tecnico',
-  'Uso de Datos',
+const OPTIONS = [
+  { key: 'alcance',       label: 'Alcance',            icon: 'help-circle-outline' },
+  { key: 'contacto',      label: 'Contacto',           icon: 'call-outline' },
+  { key: 'acceso',        label: 'Gestión de Acceso',  icon: 'lock-open-outline' },
+  { key: 'seguridad',     label: 'Seguridad',          icon: 'shield-checkmark-outline' },
+  { key: 'servicios',     label: 'Servicios',          icon: 'construct-outline' },
+  { key: 'tecnico',       label: 'Soporte Técnico',    icon: 'cog-outline' },
+  { key: 'datos',         label: 'Uso de Datos',       icon: 'speedometer-outline' },
 ];
 
 export default function SoporteScreen() {
-  const [busqueda, setBusqueda] = useState('');
-  const router = useRouter();
+  const [search, setSearch] = useState('');
+  const navigation = useNavigation();
+
+  const filtered = OPTIONS.filter(o =>
+    o.label.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Header con flecha y título */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Image
-            source={require('@/assets/images/flechapng.png')}
-            style={styles.backIcon}
-          />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#093659" />
         </TouchableOpacity>
         <Text style={styles.title}>Soporte</Text>
       </View>
 
       {/* Barra de búsqueda */}
-      <View style={styles.searchBox}>
-        <Image
-          source={require('@/assets/images/lupa.png')}
-          style={styles.searchIcon}
-        />
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#555" style={styles.searchIcon} />
         <TextInput
+          value={search}
+          onChangeText={setSearch}
           placeholder="¡Hola! ¿En qué podemos ayudarte?"
-          value={busqueda}
-          onChangeText={setBusqueda}
+          placeholderTextColor="#888"
           style={styles.searchInput}
-          placeholderTextColor="#777"
         />
       </View>
 
-      {/* Lista de categorías */}
-      <ScrollView style={{ marginTop: 10 }}>
-        {CATEGORIAS.map((categoria, index) => (
-          <TouchableOpacity key={index} style={styles.itemBox}>
-            <Image
-              source={require('@/assets/images/informacion.png')}
-              style={styles.itemIcon}
-            />
-            <Text style={styles.itemText}>{categoria}</Text>
-            <Image
-              source={require('@/assets/images/flecha-correcta.png')}
-              style={styles.arrowIcon}
-            />
+      {/* Línea separadora */}
+      <View style={styles.divider} />
+
+      {/* Lista de opciones */}
+      <FlatList
+        data={filtered}
+        keyExtractor={item => item.key}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => {
+              // Aquí podés navegar a otra pantalla según item.key
+              // p.ej. navigation.navigate('DetalleSoporte', { tipo: item.key });
+            }}
+          >
+            <Ionicons name={item.icon as any} size={20} color="#093659" style={styles.rowIcon} />
+            <Text style={styles.rowLabel}>{item.label}</Text>
+            <Ionicons name="chevron-forward" size={20} color="#093659" />
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+        )}
+        ItemSeparatorComponent={() => <View style={styles.divider} />}
+      />
     </View>
   );
 }
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: 'white',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  backIcon: {
-    width: 30,
-    height: 30,
-    marginRight: 10,
-    tintColor: '#093659',
-    resizeMode: 'contain',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#093659',
-  },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E0E0E0',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  searchIcon: {
-    width: 20,
-    height: 20,
-    tintColor: '#777',
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
-  },
-  itemBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  itemIcon: {
-    width: 24,
-    height: 24,
-    tintColor: '#093659',
-    marginRight: 12,
-  },
-  itemText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#093659',
-  },
-  arrowIcon: {
-    width: 14,
-    height: 14,
-    tintColor: '#093659',
-  },
+  container:      { flex: 1, backgroundColor: '#fff' },
+  header:         { flexDirection: 'row', alignItems: 'center', padding: 16 },
+  title:          { fontSize: 20, fontWeight: 'bold', color: '#093659', marginLeft: 12 },
+  searchContainer:{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f0f0', borderRadius: 8, marginHorizontal: 16, paddingHorizontal: 10, marginBottom: 8 },
+  searchIcon:     { marginRight: 6 },
+  searchInput:    { flex: 1, paddingVertical: 8, color: '#000' },
+  divider:        { height: 1, backgroundColor: '#eee', marginVertical: 4 },
+  row:            { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16 },
+  rowIcon:        { marginRight: 12 },
+  rowLabel:       { flex: 1, fontSize: 16, color: '#333' },
 });
