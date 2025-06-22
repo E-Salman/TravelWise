@@ -46,10 +46,10 @@ export default function CustomDrawerContent(props: DrawerContentComponentProps) 
         if (snap.exists()) {
           const data = snap.data() as any;
           setProfile({
-            name:   data.name    || base.name!,
+            name:   data.name      || base.name!,
             avatar: data.avatarUrl || base.avatar!,
-            level:  data.level   ?? 1,
-            points: data.points  ?? 0,
+            level:  data.level     ?? 1,
+            points: data.points    ?? 0,
           });
         } else {
           // sin doc, usamos sólo Auth
