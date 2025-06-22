@@ -3,7 +3,10 @@ import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import TabsLayout from './tabs/_layout';
 import CustomDrawerContent from './tabs/drawer/CustomDrawerContent';
-import SoporteScreen from './paginas/soporte';  // asegúrate de tener esta importación
+
+// 1) Importá acá tus pantallas de Soporte y Términos
+import SoporteScreen from './paginas/soporte';
+import TerminosScreen from './paginas/terminos';
 
 const Drawer = createDrawerNavigator();
 
@@ -19,17 +22,23 @@ export default function LoggedInLayout() {
         drawerStyle: { width: '75%', backgroundColor: 'transparent' },
       }}
     >
-      {/* Tu TabNavigator */}
-      <Drawer.Screen name="RootDrawer" component={TabsLayout} />
+      {/* tus tabs */}
+      <Drawer.Screen
+        name="RootDrawer"
+        component={TabsLayout}
+      />
 
-      {/* Pantalla de Soporte */}
-      <Drawer.Screen name="Soporte" component={SoporteScreen} />
+      {/* 2) Registrá Soporte */}
+      <Drawer.Screen
+        name="Soporte"
+        component={SoporteScreen}
+      />
 
-      {/*
-        Si luego quieres agregar más pantallas:
-        <Drawer.Screen name="Pagos" component={PagosScreen} />
-        <Drawer.Screen name="Terminos" component={TerminosScreen} />
-      */}
+      {/* 3) Registrá también Términos */}
+      <Drawer.Screen
+        name="Terminos"
+        component={TerminosScreen}
+      />
     </Drawer.Navigator>
   );
 }
