@@ -4,9 +4,10 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import TabsLayout from './tabs/_layout';
 import CustomDrawerContent from './tabs/drawer/CustomDrawerContent';
 
-// 1) Importá acá tus pantallas de Soporte y Términos
+// 1) Importá acá tus pantallas de Soporte, Términos y Privacidad
 import SoporteScreen from './paginas/soporte';
 import TerminosScreen from './paginas/terminos';
+import PrivacidadScreen from './paginas/privacidad';
 
 const Drawer = createDrawerNavigator();
 
@@ -38,6 +39,12 @@ export default function LoggedInLayout() {
       <Drawer.Screen
         name="Terminos"
         component={TerminosScreen}
+      />
+
+      {/* 4) Registrá Políticas de privacidad */}
+      <Drawer.Screen
+        name="Privacidad"
+        component={PrivacidadScreen}
       />
     </Drawer.Navigator>
   );
