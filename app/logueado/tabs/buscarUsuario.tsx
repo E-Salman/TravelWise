@@ -33,7 +33,7 @@ import { Text, View } from '@/components/Themed';
 import { Feather } from '@expo/vector-icons';
 import type { Notificacion } from '../../../app/types/notificacion';
 import type { FriendRequest } from '../../../app/types/friendRequest';
-
+import { useNavigation } from '@react-navigation/native';
 // Para tipar cada resultado con su UID
 type Resultado = {
   id: string;
@@ -41,7 +41,7 @@ type Resultado = {
 };
 
 export default function BuscarUsuariosScreen() {
-  const router = useRouter();
+   const navigation = useNavigation();
   const [busqueda, setBusqueda] = useState('');
   const [resultados, setResultados] = useState<Resultado[]>([]);
   const [loading, setLoading] = useState(false);
@@ -127,7 +127,7 @@ export default function BuscarUsuariosScreen() {
   return (
     <View style={styles.container}>
       {/* ← Volver */}
-      <Pressable style={styles.backButton} onPress={() => router.back()}>
+      <Pressable style={styles.backButton} onPress={() => (navigation as any).navigate('Paginas', { screen: 'perfil' })}>
         <Feather name="arrow-left" size={28} color="#093659" />
       </Pressable>
 

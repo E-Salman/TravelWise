@@ -23,6 +23,7 @@ import { db } from '../../firebase';
 import type { Notificacion } from '../../types/notificacion';
 import type { FriendRequest } from '../../types/friendRequest';
 import { Feather } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 // Extiende tu interfaz para UI
 interface NotifUI extends Notificacion {
@@ -35,7 +36,7 @@ export default function NotificacionesScreen() {
   const auth = getAuth();
   const uid = auth.currentUser?.uid;
   const [notificaciones, setNotificaciones] = useState<NotifUI[]>([]);
-
+  const navigation = useNavigation();
   useEffect(() => {
     if (!uid) return;
     const notifCol = collection(db, 'users', uid, 'notifications');
@@ -136,10 +137,9 @@ export default function NotificacionesScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
-        <Image
-          source={require('../../../assets/images/flechapng.png')}
-          style={styles.backIcon}
-        />
+        <Pressable style={styles.volver}  onPress={() => (navigation as any).navigate('Paginas', { screen: 'home' })}>
+                <Feather name="arrow-left" size={28} color="#093659" />
+              </Pressable>
         <Text style={styles.title}>Notificaciones</Text>
       </View>
 
@@ -223,4 +223,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  volver: { marginBottom: 10 },
 });

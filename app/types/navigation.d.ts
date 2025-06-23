@@ -22,6 +22,8 @@ export type PaginasStackParamList = {
   soporte: undefined;
   buscarUsuario: undefined;
   notificaciones: undefined;
+  perfil: undefined;
+  home: undefined;
 };
 
 export type TabsParamList = {
@@ -31,6 +33,8 @@ export type TabsParamList = {
   Menu: undefined;
   Paginas: NavigatorScreenParams<PaginasStackParamList>;
   notificaciones: undefined;
+  perfil: undefined;
+  home: undefined;
 };
 
 export type HomeScreenProps = BottomTabScreenProps<TabsParamList, 'Home'>;
