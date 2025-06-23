@@ -20,6 +20,8 @@ export type PaginasStackParamList = {
   crearViaje: undefined;
   pagos: undefined;
   soporte: undefined;
+  buscarUsuario: undefined;
+  notificaciones: undefined;
 };
 
 export type TabsParamList = {
@@ -28,6 +30,7 @@ export type TabsParamList = {
   Chat: undefined;
   Menu: undefined;
   Paginas: NavigatorScreenParams<PaginasStackParamList>;
+  notificaciones: undefined;
 };
 
 export type HomeScreenProps = BottomTabScreenProps<TabsParamList, 'Home'>;

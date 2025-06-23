@@ -18,8 +18,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth, deleteUser } from 'firebase/auth';
 import { updateUser } from '../../../app/auth/updateUser';
 import { UsuarioClass } from '../../../app/types/usuario';
-
+import { useNavigation } from '@react-navigation/native';
+import { HomeScreenProps } from '@/app/types/navigation';
+import { TabsParamList } from '../../types/navigation';
 import { Text, View } from '@/components/Themed';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+
 
 export default function PerfilScreen() {
   const router = useRouter();
@@ -27,7 +31,7 @@ export default function PerfilScreen() {
   const [mostrarConfirmacionEliminar, setMostrarConfirmacionEliminar] = useState(false);
   const [usuarioOriginal, setUsuarioOriginal] = useState(new UsuarioClass());
 
-  const [usuario, setUsuario] = useState(new UsuarioClass());
+  const [usuario, setUsuario] = useState<UsuarioClass | null>(null);
   const [modoEdicion, setModoEdicion] = useState(false);
 
   const { width, height } = useWindowDimensions();
@@ -36,6 +40,8 @@ export default function PerfilScreen() {
   const nombreFontSize = Math.min(width * 0.06, height * 0.04);
   const ciudadFontSize = Math.min(width * 0.045, height * 0.03);
   const mailFontSize = Math.min(width * 0.045, height * 0.03);
+
+  const navigation = useNavigation<BottomTabNavigationProp<TabsParamList>>();
 
   useEffect(() => {
     const obtenerDatos = async () => {
@@ -47,7 +53,6 @@ export default function PerfilScreen() {
       console.log("No user logged in.");
       return;
     }
-
     // 🔑 Opcional: actualiza el UID local para asegurar coherencia
     await AsyncStorage.setItem('userUID', uid);
 
@@ -97,19 +102,23 @@ export default function PerfilScreen() {
   };
 
   const guardarCambios = async () => {
-    try {
-      let uid = await AsyncStorage.getItem('userUID');
-      if (!uid) {
-        const auth = getAuth();
-        uid = auth.currentUser?.uid || '';
-      }
-      await updateUser(uid, usuario);
-      Alert.alert('Éxito', 'Datos actualizados correctamente');
-      setModoEdicion(false);
-    } catch (error) {
-      console.error(error);
+  try {
+    let uid = await AsyncStorage.getItem('userUID');
+    if (!uid) {
+      const auth = getAuth();
+      uid = auth.currentUser?.uid || '';
     }
-  };
+    if (!usuario) {
+      throw new Error("Usuario no cargado");
+    }
+
+    await updateUser(uid, usuario);
+    Alert.alert('Éxito', 'Datos actualizados correctamente');
+    setModoEdicion(false);
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   return (
     <View style={styles.container}>
@@ -137,6 +146,7 @@ export default function PerfilScreen() {
         if (modoEdicion) {
           guardarCambios();
         } else {
+          if (!usuario) return;
           setUsuarioOriginal(new UsuarioClass(usuario));
           setModoEdicion(true);
         }
@@ -150,7 +160,7 @@ export default function PerfilScreen() {
   {/* Imagen de perfil */}
   <Image
     source={{
-      uri: usuario.avatarUrl || 'https://avatars.dicebear.com/api/adventurer/default.svg',
+      uri: usuario?.avatarUrl || 'https://avatars.dicebear.com/api/adventurer/default.svg',
     }}
     style={{
       width: avatarSize,
@@ -169,9 +179,10 @@ export default function PerfilScreen() {
         <>
           <TextInput
             style={styles.input}
-            value={usuario.nombre}
+            value={usuario?.nombre ?? ' '}
             placeholder="Nombre"
             onChangeText={(text) => {
+              if (!usuario) return;
               const u = new UsuarioClass(usuario);
               u.nombre = text;
               setUsuario(u);
@@ -179,9 +190,10 @@ export default function PerfilScreen() {
           />
           <TextInput
             style={styles.input}
-            value={usuario.mail}
+            value={usuario?.mail ?? ' '}
             placeholder="Email"
             onChangeText={(text) => {
+              if (!usuario) return;
               const u = new UsuarioClass(usuario);
               u.mail = text;
               setUsuario(u);
@@ -189,9 +201,10 @@ export default function PerfilScreen() {
           />
           <TextInput
             style={styles.input}
-            value={usuario.ciudad}
+            value={usuario?.ciudad ?? ' '}
             placeholder="Ciudad"
             onChangeText={(text) => {
+              if (!usuario) return;
               const u = new UsuarioClass(usuario);
               u.ciudad = text;
               setUsuario(u);
@@ -199,9 +212,10 @@ export default function PerfilScreen() {
           />
           <TextInput
             style={styles.input}
-            value={usuario.avatarUrl}
+            value={usuario?.avatarUrl ?? ' '}
             placeholder="Foto URL"
             onChangeText={(text) => {
+              if (!usuario) return;
               const u = new UsuarioClass(usuario);
               u.avatarUrl = text;
               setUsuario(u);
@@ -210,9 +224,9 @@ export default function PerfilScreen() {
         </>
       ) : (
         <>
-          <Text style={[styles.nombre, { fontSize: nombreFontSize }]}>{usuario.nombre}</Text>
-          <Text style={[styles.mail, { fontSize: mailFontSize }]}>Mail: {usuario.mail}</Text>
-          <Text style={[styles.ciudad, { fontSize: ciudadFontSize }]}>Ciudad: {usuario.ciudad}</Text>
+          <Text style={[styles.nombre, { fontSize: nombreFontSize }]}>{usuario?.nombre ?? ' '}</Text>
+          <Text style={[styles.mail, { fontSize: mailFontSize }]}>Mail: {usuario?.mail ?? ' '}</Text>
+          <Text style={[styles.ciudad, { fontSize: ciudadFontSize }]}>Ciudad: {usuario?.ciudad ?? ' '}</Text>
         </>
       )}
     </View>
@@ -220,21 +234,23 @@ export default function PerfilScreen() {
     <>
       <View style={styles.perfilMedio}>
         <View style={styles.cajitasMellizas}>
-          <Pressable style={styles.cajitasM} onPress={() => router.push('../logueado')}>
+          <Pressable style={styles.cajitasM} onPress={() => router.push('../buscarUsuario')}>
             <Text style={styles.valorCajita}>28</Text>
             <Text style={styles.nombreCajita}>Viajes realizados</Text>
           </Pressable>
-          <Pressable style={styles.cajitasM} onPress={() => router.push('../logueado')}>
+          <Pressable style={styles.cajitasM} onPress={() => router.push('../buscarUsuario')}>
             <Text style={styles.valorCajita}>47</Text>
             <Text style={styles.nombreCajita}>Amigos</Text>
           </Pressable>
         </View>
 
-        <Pressable style={styles.invitarAmichisCajita} onPress={() => router.push('../logueado')}>
-          <Text style={styles.invitarAmichis}>Invitar amigos</Text>
-          <Feather name="plus-circle" size={24} color="#093659" />
-        </Pressable>
-      </View>
+        <Pressable
+  style={styles.invitarAmichisCajita}
+  onPress={() => (navigation as any).navigate('Paginas', { screen: 'buscarUsuario' })}>
+  <Text style={styles.invitarAmichis}>Invitar amigos</Text>
+  <Feather name="plus-circle" size={24} color="#093659" />
+</Pressable>
+</View>
 
       <View style={styles.opciones}>
         <Pressable style={styles.accion} onPress={() => router.push('../logueado')}>
@@ -261,8 +277,9 @@ export default function PerfilScreen() {
     <View style={{ marginTop: 20 }}>
       <Text>Visibilidad de datos</Text>
       <Picker
-        selectedValue={usuario.visibilidad}
+        selectedValue={usuario?.visibilidad ?? ' '}
         onValueChange={(v) => {
+          if (!usuario) return;
           const u = new UsuarioClass(usuario);
           u.visibilidad = v;
           setUsuario(u);
@@ -275,8 +292,9 @@ export default function PerfilScreen() {
 
       <Text>Sugerencias</Text>
       <Picker
-        selectedValue={usuario.sugerencia}
+        selectedValue={usuario?.sugerencia ?? ' '}
         onValueChange={(v) => {
+          if (!usuario) return;
           const u = new UsuarioClass(usuario);
           u.sugerencia = v;
           setUsuario(u);
@@ -289,8 +307,9 @@ export default function PerfilScreen() {
 
       <Text>Preferencias</Text>
       <Picker
-        selectedValue={usuario.preferencias}
+        selectedValue={usuario?.preferencias ?? ' '}
         onValueChange={(v) => {
+          if (!usuario) return;
           const u = new UsuarioClass(usuario);
           u.preferencias = v;
           setUsuario(u);
@@ -302,8 +321,9 @@ export default function PerfilScreen() {
 
       <Text>Notificaciones</Text>
       <Picker
-        selectedValue={usuario.notificaciones}
+        selectedValue={usuario?.notificaciones ?? ' '}
         onValueChange={(v) => {
+          if (!usuario) return;
           const u = new UsuarioClass(usuario);
           u.notificaciones = v;
           setUsuario(u);
