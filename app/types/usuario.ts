@@ -1,3 +1,6 @@
+import type { Timestamp } from 'firebase/firestore';
+import { serverTimestamp } from 'firebase/firestore';
+
 export interface usuario {
   nombre: string;
   mail: string;
@@ -7,6 +10,7 @@ export interface usuario {
   sugerencia: string;    // para tu dropdown
   notificaciones: string; // para el toggle
   preferencias: string;
+  lastLogin?: Timestamp;
 }
 
 export class UsuarioClass implements usuario {
@@ -18,6 +22,7 @@ export class UsuarioClass implements usuario {
   sugerencia = 'Amigos primero';
   notificaciones = 'Activadas';
   preferencias = 'Personalizadas';
+  lastLogin?: Timestamp;
 
   constructor(init?: Partial<usuario>) {
     Object.assign(this, init);
@@ -33,6 +38,7 @@ export class UsuarioClass implements usuario {
     sugerencia: this.sugerencia,
     notificaciones: this.notificaciones,
     preferencias: this.preferencias,
+    lastLogin: serverTimestamp(),
   };
 }
 
