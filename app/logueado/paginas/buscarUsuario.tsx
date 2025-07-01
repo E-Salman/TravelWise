@@ -140,11 +140,7 @@ export default function BuscarUsuariosScreen() {
 
   return (
     <View style={styles.container}>
-      {/* ← Volver */}
-      <Pressable style={styles.backButton} onPress={volverAHome}>
-        <Feather name="arrow-left" size={28} color="#093659" />
-      </Pressable>
-
+      {/* ← Volver eliminada */}
       <Text style={styles.title}>Buscar usuarios</Text>
 
       {/* Fila de búsqueda */}

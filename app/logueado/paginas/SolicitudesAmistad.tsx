@@ -5,6 +5,8 @@ import { collection, getDocs, doc, updateDoc, arrayUnion, getDoc } from 'firebas
 import { db } from '../../firebase';
 import { Text, View } from '@/components/Themed';
 import { UsuarioClass } from '../../types/usuario';
+import { useNavigation } from '@react-navigation/native';
+import { Feather } from '@expo/vector-icons';
 
 export default function SolicitudesAmistadScreen() {
   type Solicitud = { id: string; fromUid: string; status?: string };
@@ -13,6 +15,7 @@ export default function SolicitudesAmistadScreen() {
   const [loading, setLoading] = useState(true);
   const auth = getAuth();
   const miUid = auth.currentUser?.uid;
+  const navigation = useNavigation();
 
   useEffect(() => {
     const fetchSolicitudes = async () => {
@@ -73,6 +76,7 @@ export default function SolicitudesAmistadScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Flecha de volver eliminada */}
       <Text style={styles.title}>Solicitudes de amistad</Text>
       <FlatList
         data={solicitudes}

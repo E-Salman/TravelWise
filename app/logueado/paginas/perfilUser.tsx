@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Image, ActivityIndicator, useWindowDimensions, Alert, Pressable, Platform, Modal } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, collection, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '../../firebase';
 import { UsuarioClass } from '../../types/usuario';
@@ -29,6 +29,7 @@ export default function UserProfileScreen() {
   const [showWebModal, setShowWebModal] = useState(false);
   const [showWebUnblockModal, setShowWebUnblockModal] = useState(false);
   const [showWebDeleteFriendModal, setShowWebDeleteFriendModal] = useState(false);
+  const [solicitudEnviada, setSolicitudEnviada] = useState(false);
 
   // Función para bloquear usuario
   const bloquearUsuario = async () => {
@@ -69,14 +70,36 @@ export default function UserProfileScreen() {
     const miUid = auth.currentUser?.uid;
     if (!miUid) return;
     try {
-      await addDoc(collection(db, 'users', uid, 'friendRequests'), {
+      // Verificar si ya existe una solicitud pendiente
+      const friendRequestsRef = collection(db, 'users', uid, 'friendRequests');
+      const snapshot = await getDoc(doc(friendRequestsRef, miUid));
+      if (snapshot.exists() && snapshot.data().status === 'pending') {
+        if (Platform.OS === 'web') {
+          window.alert('Ya enviaste una solicitud a este usuario.');
+        } else {
+          Alert.alert('Ya enviaste una solicitud a este usuario.');
+        }
+        setSolicitudEnviada(true);
+        return;
+      }
+      // Si no existe, crear la solicitud
+      await addDoc(friendRequestsRef, {
         fromUid: miUid,
         timestamp: serverTimestamp(),
         status: 'pending',
       });
-      Alert.alert('Solicitud enviada');
+      setSolicitudEnviada(true);
+      if (Platform.OS === 'web') {
+        window.alert('Solicitud enviada');
+      } else {
+        Alert.alert('Solicitud enviada');
+      }
     } catch (err) {
-      Alert.alert('Error', 'No se pudo enviar la solicitud');
+      if (Platform.OS === 'web') {
+        window.alert('Error: No se pudo enviar la solicitud');
+      } else {
+        Alert.alert('Error', 'No se pudo enviar la solicitud');
+      }
     }
   };
 
@@ -135,13 +158,25 @@ export default function UserProfileScreen() {
   };
 
   useEffect(() => {
+    let unsubscribeUsuario: (() => void) | null = null;
     const fetchUser = async () => {
       if (!uid) return;
       try {
-        const snap = await getDoc(doc(db, 'users', uid));
+        // Suscribirse en vivo a los datos del usuario
+        const userRef = doc(db, 'users', uid);
+        unsubscribeUsuario = onSnapshot(userRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setUsuario(new UsuarioClass(docSnap.data()));
+            const amigosArr = docSnap.data().amigos || [];
+            setCantidadAmigos(amigosArr.length);
+          } else {
+            setUsuario(null);
+            setCantidadAmigos(0);
+          }
+        });
+        // ...resto de la lógica...
+        const snap = await getDoc(userRef);
         if (snap.exists()) {
-          setUsuario(new UsuarioClass(snap.data()));
-          setCantidadAmigos((snap.data().amigos || []).length);
           // Verificar si el usuario actual está bloqueado
           const auth = getAuth();
           const miUid = auth.currentUser?.uid;
@@ -151,7 +186,6 @@ export default function UserProfileScreen() {
           } else {
             setBloqueado(false);
           }
-          // Verificar si yo lo tengo bloqueado
           if (miUid) {
             const miSnap = await getDoc(doc(db, 'users', miUid));
             if (miSnap.exists()) {
@@ -159,6 +193,13 @@ export default function UserProfileScreen() {
               setEstaBloqueadoPorMi(misBloqueados.includes(uid));
               const misAmigos = miSnap.data().amigos || [];
               setEsAmigo(misAmigos.includes(uid));
+            }
+            const friendRequestsRef = collection(db, 'users', uid, 'friendRequests');
+            const friendRequestsSnap = await getDoc(doc(friendRequestsRef, miUid));
+            if (friendRequestsSnap.exists() && friendRequestsSnap.data().status === 'pending') {
+              setSolicitudEnviada(true);
+            } else {
+              setSolicitudEnviada(false);
             }
           }
         } else {
@@ -171,6 +212,9 @@ export default function UserProfileScreen() {
       }
     };
     fetchUser();
+    return () => {
+      if (unsubscribeUsuario) unsubscribeUsuario();
+    };
   }, [uid]);
 
   if (loading) {
@@ -202,20 +246,9 @@ export default function UserProfileScreen() {
       {/* CABECERA PERFIL */}
       <View style={styles.cabeceraPerfil}>
         <View style={styles.headerRow}>
-          <Feather
-            name="arrow-left"
-            size={28}
-            color="#093659"
-            style={{ marginRight: 8 }}
-            onPress={() => navigation.goBack()}
-          />
+          {/* Flecha de volver eliminada */}
           <Text style={[styles.headerTitle, { backgroundColor: 'transparent' }]}>Perfil</Text>
-          <Feather
-            name="settings"
-            size={24}
-            color="#093659"
-            style={{ marginLeft: 'auto' }}
-          />
+          {/* Botón de configuración eliminado */}
         </View>
         <View style={[styles.profileRow, { flexDirection: isWideScreen ? 'row' : 'column', alignItems: 'center', backgroundColor: 'transparent' }]}> 
           <Image
@@ -276,6 +309,11 @@ export default function UserProfileScreen() {
               <Pressable style={styles.actionBox} onPress={eliminarAmigo}>
                 <Text style={styles.addFriendText}>Eliminar amigo</Text>
               </Pressable>
+            ) : solicitudEnviada ? (
+              <View style={[styles.actionBox, { backgroundColor: '#e6f7e6', borderColor: '#4caf50', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }]}> 
+                <Feather name="check" size={20} color="#4caf50" style={{ marginRight: 6 }} />
+                <Text style={[styles.addFriendText, { color: '#4caf50' }]}>Solicitud enviada</Text>
+              </View>
             ) : (
               <Pressable style={styles.actionBox} onPress={enviarSolicitudAmistad}>
                 <Text style={styles.addFriendText}>Agregar como amigo</Text>

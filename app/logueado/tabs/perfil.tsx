@@ -258,7 +258,7 @@ export default function PerfilScreen() {
       </View>
 
       <View style={styles.opciones}>
-        <Pressable style={styles.accion} onPress={() => router.push('../logueado')}>
+        <Pressable style={styles.accion} onPress={() => navigation.navigate('Paginas', { screen: 'configuracion' })}>
           <Feather name="settings" size={20} color="#1E1E1E" />
           <Text style={styles.opcionTxt}>Configuración</Text>
         </Pressable>
