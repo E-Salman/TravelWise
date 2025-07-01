@@ -8,6 +8,7 @@ import { UsuarioClass } from '../../types/usuario';
 import { Text, View } from '@/components/Themed';
 import { Feather } from '@expo/vector-icons';
 import type { PaginasStackParamList } from '@/app/types/navigation';
+import { enviarNotificacion } from '../../utils/notificaciones';
 
 export default function UserProfileScreen() {
   const route = useRoute<RouteProp<PaginasStackParamList, 'perfilUser'>>();
@@ -88,6 +89,8 @@ export default function UserProfileScreen() {
         timestamp: serverTimestamp(),
         status: 'pending',
       });
+      // Enviar notificación al usuario receptor
+      await enviarNotificacion(uid, 'Tienes una nueva solicitud de amistad', 'solicitud_amistad');
       setSolicitudEnviada(true);
       if (Platform.OS === 'web') {
         window.alert('Solicitud enviada');
