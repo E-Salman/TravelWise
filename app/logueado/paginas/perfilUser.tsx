@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Image, ActivityIndicator, useWindowDimensions, Alert, Pressable } from 'react-native';
+import { StyleSheet, Image, ActivityIndicator, useWindowDimensions, Alert, Pressable, Platform, Modal } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
@@ -26,34 +26,41 @@ export default function UserProfileScreen() {
   const [esAmigo, setEsAmigo] = useState(false);
   const [estaBloqueadoPorMi, setEstaBloqueadoPorMi] = useState(false);
   const [cantidadAmigos, setCantidadAmigos] = useState(0);
+  const [showWebModal, setShowWebModal] = useState(false);
+  const [showWebUnblockModal, setShowWebUnblockModal] = useState(false);
+  const [showWebDeleteFriendModal, setShowWebDeleteFriendModal] = useState(false);
 
   // Función para bloquear usuario
   const bloquearUsuario = async () => {
-    Alert.alert(
-      'Bloquear usuario',
-      '¿Estás seguro que deseas bloquear a este usuario? También se eliminará de tu lista de amigos.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Bloquear', style: 'destructive', onPress: async () => {
-            const auth = getAuth();
-            const miUid = auth.currentUser?.uid;
-            if (!miUid) return;
-            const userRef = doc(db, 'users', miUid);
-            await updateDoc(userRef, {
-              bloqueados: arrayUnion(uid),
-              amigos: arrayRemove(uid),
-            });
-            // También eliminar al usuario actual de la lista de amigos del bloqueado
-            await updateDoc(doc(db, 'users', uid), {
-              amigos: arrayRemove(miUid),
-            });
-            setEstaBloqueadoPorMi(true);
-            Alert.alert('Usuario bloqueado y eliminado de tus amigos');
+    if (Platform.OS === 'web') {
+      setShowWebModal(true);
+    } else {
+      Alert.alert(
+        'Bloquear usuario',
+        '¿Estás seguro que deseas bloquear a este usuario? También se eliminará de tu lista de amigos.',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Bloquear', style: 'destructive', onPress: async () => {
+              const auth = getAuth();
+              const miUid = auth.currentUser?.uid;
+              if (!miUid) return;
+              const userRef = doc(db, 'users', miUid);
+              await updateDoc(userRef, {
+                bloqueados: arrayUnion(uid),
+                amigos: arrayRemove(uid),
+              });
+              // También eliminar al usuario actual de la lista de amigos del bloqueado
+              await updateDoc(doc(db, 'users', uid), {
+                amigos: arrayRemove(miUid),
+              });
+              setEstaBloqueadoPorMi(true);
+              Alert.alert('Usuario bloqueado y eliminado de tus amigos');
+            }
           }
-        }
-      ]
-    );
+        ]
+      );
+    }
   };
 
   // Función para enviar solicitud de amistad
@@ -75,33 +82,55 @@ export default function UserProfileScreen() {
 
   // Función para eliminar amigo
   const eliminarAmigo = async () => {
-    const auth = getAuth();
-    const miUid = auth.currentUser?.uid;
-    if (!miUid) return;
-    try {
-      await updateDoc(doc(db, 'users', miUid), { amigos: arrayRemove(uid) });
-      await updateDoc(doc(db, 'users', uid), { amigos: arrayRemove(miUid) });
-      setEsAmigo(false);
-      Alert.alert('Amigo eliminado');
-    } catch (err) {
-      Alert.alert('Error', 'No se pudo eliminar al amigo');
+    if (Platform.OS === 'web') {
+      setShowWebDeleteFriendModal(true);
+    } else {
+      Alert.alert(
+        'Eliminar amigo',
+        '¿Estás seguro que deseas eliminar a este amigo?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Eliminar', style: 'destructive', onPress: async () => {
+              const auth = getAuth();
+              const miUid = auth.currentUser?.uid;
+              if (!miUid) return;
+              await updateDoc(doc(db, 'users', miUid), { amigos: arrayRemove(uid) });
+              await updateDoc(doc(db, 'users', uid), { amigos: arrayRemove(miUid) });
+              setEsAmigo(false);
+              Alert.alert('Amigo eliminado');
+            }
+          }
+        ]
+      );
     }
   };
 
   // Función para desbloquear usuario
   const desbloquearUsuario = async () => {
-    const auth = getAuth();
-    const miUid = auth.currentUser?.uid;
-    if (!miUid) return;
-    try {
-      const userRef = doc(db, 'users', miUid);
-      await updateDoc(userRef, {
-        bloqueados: arrayRemove(uid),
-      });
-      setEstaBloqueadoPorMi(false);
-      Alert.alert('Usuario desbloqueado');
-    } catch (err) {
-      Alert.alert('Error', 'No se pudo desbloquear al usuario');
+    if (Platform.OS === 'web') {
+      setShowWebUnblockModal(true);
+    } else {
+      Alert.alert(
+        'Desbloquear usuario',
+        '¿Estás seguro que deseas desbloquear a este usuario?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Desbloquear', style: 'default', onPress: async () => {
+              const auth = getAuth();
+              const miUid = auth.currentUser?.uid;
+              if (!miUid) return;
+              const userRef = doc(db, 'users', miUid);
+              await updateDoc(userRef, {
+                bloqueados: arrayRemove(uid),
+              });
+              setEstaBloqueadoPorMi(false);
+              Alert.alert('Usuario desbloqueado');
+            }
+          }
+        ]
+      );
     }
   };
 
@@ -255,6 +284,110 @@ export default function UserProfileScreen() {
           </>
         )}
       </View>
+
+      {/* Modal de confirmación para web */}
+      <Modal
+        visible={showWebModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowWebModal(false)}
+      >
+        <View style={{ flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'rgba(0,0,0,0.3)' }}>
+          <View style={{ backgroundColor:'#fff', padding:24, borderRadius:12, alignItems:'center', minWidth:300 }}>
+            <Text style={{ fontWeight:'bold', fontSize:18, marginBottom:12 }}>Bloquear usuario</Text>
+            <Text style={{ marginBottom:20 }}>¿Estás seguro que deseas bloquear a este usuario? También se eliminará de tu lista de amigos.</Text>
+            <View style={{ flexDirection:'row', gap:12 }}>
+              <Pressable onPress={() => setShowWebModal(false)} style={{ padding:10, borderRadius:6, backgroundColor:'#eee', marginRight:8 }}>
+                <Text>Cancelar</Text>
+              </Pressable>
+              <Pressable onPress={async () => {
+                setShowWebModal(false);
+                const auth = getAuth();
+                const miUid = auth.currentUser?.uid;
+                if (!miUid) return;
+                const userRef = doc(db, 'users', miUid);
+                await updateDoc(userRef, {
+                  bloqueados: arrayUnion(uid),
+                  amigos: arrayRemove(uid),
+                });
+                await updateDoc(doc(db, 'users', uid), {
+                  amigos: arrayRemove(miUid),
+                });
+                setEstaBloqueadoPorMi(true);
+                if (Platform.OS === 'web') alert('Usuario bloqueado y eliminado de tus amigos');
+              }} style={{ padding:10, borderRadius:6, backgroundColor:'red' }}>
+                <Text style={{ color:'#fff' }}>Bloquear</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de confirmación para web: desbloquear */}
+      <Modal
+        visible={showWebUnblockModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowWebUnblockModal(false)}
+      >
+        <View style={{ flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'rgba(0,0,0,0.3)' }}>
+          <View style={{ backgroundColor:'#fff', padding:24, borderRadius:12, alignItems:'center', minWidth:300 }}>
+            <Text style={{ fontWeight:'bold', fontSize:18, marginBottom:12 }}>Desbloquear usuario</Text>
+            <Text style={{ marginBottom:20 }}>¿Estás seguro que deseas desbloquear a este usuario?</Text>
+            <View style={{ flexDirection:'row', gap:12 }}>
+              <Pressable onPress={() => setShowWebUnblockModal(false)} style={{ padding:10, borderRadius:6, backgroundColor:'#eee', marginRight:8 }}>
+                <Text>Cancelar</Text>
+              </Pressable>
+              <Pressable onPress={async () => {
+                setShowWebUnblockModal(false);
+                const auth = getAuth();
+                const miUid = auth.currentUser?.uid;
+                if (!miUid) return;
+                const userRef = doc(db, 'users', miUid);
+                await updateDoc(userRef, {
+                  bloqueados: arrayRemove(uid),
+                });
+                setEstaBloqueadoPorMi(false);
+                if (Platform.OS === 'web') alert('Usuario desbloqueado');
+              }} style={{ padding:10, borderRadius:6, backgroundColor:'#093659' }}>
+                <Text style={{ color:'#fff' }}>Desbloquear</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de confirmación para web: eliminar amigo */}
+      <Modal
+        visible={showWebDeleteFriendModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowWebDeleteFriendModal(false)}
+      >
+        <View style={{ flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'rgba(0,0,0,0.3)' }}>
+          <View style={{ backgroundColor:'#fff', padding:24, borderRadius:12, alignItems:'center', minWidth:300 }}>
+            <Text style={{ fontWeight:'bold', fontSize:18, marginBottom:12 }}>Eliminar amigo</Text>
+            <Text style={{ marginBottom:20 }}>¿Estás seguro que deseas eliminar a este amigo?</Text>
+            <View style={{ flexDirection:'row', gap:12 }}>
+              <Pressable onPress={() => setShowWebDeleteFriendModal(false)} style={{ padding:10, borderRadius:6, backgroundColor:'#eee', marginRight:8 }}>
+                <Text>Cancelar</Text>
+              </Pressable>
+              <Pressable onPress={async () => {
+                setShowWebDeleteFriendModal(false);
+                const auth = getAuth();
+                const miUid = auth.currentUser?.uid;
+                if (!miUid) return;
+                await updateDoc(doc(db, 'users', miUid), { amigos: arrayRemove(uid) });
+                await updateDoc(doc(db, 'users', uid), { amigos: arrayRemove(miUid) });
+                setEsAmigo(false);
+                if (Platform.OS === 'web') alert('Amigo eliminado');
+              }} style={{ padding:10, borderRadius:6, backgroundColor:'red' }}>
+                <Text style={{ color:'#fff' }}>Eliminar</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
