@@ -10,9 +10,24 @@ import { View, Text } from '@/components/Themed';
 import { useRouter } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useNavigation } from '@react-navigation/native';
+import { HomeScreenProps } from '@/app/types/navigation';
 
 export default function crearViajeScreen() {
   const router = useRouter();
+  const navigation = useNavigation<HomeScreenProps['navigation']>();
+
+  const volverAHome = () => {
+    const parent = navigation.getParent?.();
+    if (parent) {
+      parent.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      });
+    } else {
+      navigation.navigate('Home');
+    }
+  };
 
   const [origen, setOrigen] = useState('');
   const [destino, setDestino] = useState('');
@@ -26,7 +41,7 @@ export default function crearViajeScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={volverAHome}>
           <Image
             source={require('@/assets/images/flechapng.png')}
             style={styles.backIcon}

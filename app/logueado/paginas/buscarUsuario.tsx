@@ -28,11 +28,11 @@ import {
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '../../firebase';
-import { UsuarioClass } from '../../../app/types/usuario';
+import { UsuarioClass } from '../../types/usuario';
 import { Text, View } from '@/components/Themed';
 import { Feather } from '@expo/vector-icons';
-import type { Notificacion } from '../../../app/types/notificacion';
-import type { FriendRequest } from '../../../app/types/friendRequest';
+import type { Notificacion } from '../../types/notificacion';
+import type { FriendRequest } from '../../types/friendRequest';
 import { useNavigation } from '@react-navigation/native';
 // Para tipar cada resultado con su UID
 type Resultado = {
@@ -42,6 +42,20 @@ type Resultado = {
 
 export default function BuscarUsuariosScreen() {
    const navigation = useNavigation();
+   const router = useRouter();
+
+   const volverAHome = () => {
+     const parent = navigation.getParent?.();
+     if (parent) {
+       parent.reset({
+         index: 0,
+         routes: [{ name: 'Home' }],
+       });
+     } else {
+       (navigation as any).navigate('Home');
+     }
+   };
+
   const [busqueda, setBusqueda] = useState('');
   const [resultados, setResultados] = useState<Resultado[]>([]);
   const [loading, setLoading] = useState(false);
@@ -127,7 +141,7 @@ export default function BuscarUsuariosScreen() {
   return (
     <View style={styles.container}>
       {/* ← Volver */}
-      <Pressable style={styles.backButton} onPress={() => (navigation as any).navigate('Paginas', { screen: 'perfil' })}>
+      <Pressable style={styles.backButton} onPress={volverAHome}>
         <Feather name="arrow-left" size={28} color="#093659" />
       </Pressable>
 
@@ -160,31 +174,26 @@ export default function BuscarUsuariosScreen() {
             : null
         }
         renderItem={({ item }) => (
-          <View style={styles.userCard}>
-            {/* Avatar con fallback */}
-            {item.usuario.avatarUrl ? (
-              <Image
-                source={{ uri: item.usuario.avatarUrl }}
-                style={styles.avatar}
-              />
-            ) : (
-              <View style={[styles.avatar, styles.avatarPlaceholder]} />
-            )}
+          <Pressable onPress={() => navigation.navigate('Paginas', { screen: 'perfilUser', params: { uid: item.id } })}>
+            <View style={styles.userCard}>
+              {/* Avatar con fallback */}
+              {item.usuario.avatarUrl ? (
+                <Image
+                  source={{ uri: item.usuario.avatarUrl }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={[styles.avatar, styles.avatarPlaceholder]} />
+              )}
 
-            <RNView style={styles.userInfo}>
-              <Text style={styles.nombre}>{item.usuario.nombre}</Text>
-              <Text style={styles.mail}>{item.usuario.mail}</Text>
-              <Text style={styles.ciudad}>Ciudad: {item.usuario.ciudad}</Text>
-
-              {/* Botón Agregar amigo */}
-              <Pressable
-                style={styles.addButton}
-                onPress={() => agregarAmigo(item.id)}
-              >
-                <Text style={styles.addButtonText}>Agregar</Text>
-              </Pressable>
-            </RNView>
-          </View>
+              <RNView style={styles.userInfo}>
+                <Text style={styles.nombre}>{item.usuario.nombre}</Text>
+                <Text style={styles.mail}>{item.usuario.mail}</Text>
+                <Text style={styles.ciudad}>{item.usuario.ciudad}</Text>
+                {/* Botón Agregar amigo eliminado */}
+              </RNView>
+            </View>
+          </Pressable>
         )}
       />
     </View>
