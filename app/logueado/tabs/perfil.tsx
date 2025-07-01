@@ -30,6 +30,7 @@ export default function PerfilScreen() {
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
   const [mostrarConfirmacionEliminar, setMostrarConfirmacionEliminar] = useState(false);
   const [usuarioOriginal, setUsuarioOriginal] = useState(new UsuarioClass());
+  const [cantidadAmigos, setCantidadAmigos] = useState(0);
 
   const [usuario, setUsuario] = useState<UsuarioClass | null>(null);
   const [modoEdicion, setModoEdicion] = useState(false);
@@ -45,30 +46,27 @@ export default function PerfilScreen() {
 
   useEffect(() => {
     const obtenerDatos = async () => {
-  try {
-    const auth = getAuth();
-    const uid = auth.currentUser?.uid;  // 👈 Siempre usar Auth como verdad absoluta
-
-    if (!uid) {
-      console.log("No user logged in.");
-      return;
-    }
-    // 🔑 Opcional: actualiza el UID local para asegurar coherencia
-    await AsyncStorage.setItem('userUID', uid);
-
-    const ref = doc(db, 'users', uid);
-    const snap = await getDoc(ref);
-
-    if (snap.exists()) {
-      setUsuario(new UsuarioClass(snap.data()));
-    } else {
-      console.log("No existe documento para este UID");
-    }
-
-  } catch (error) {
-    console.error("Error en obtenerDatos:", error);
-  }
-};
+      try {
+        const auth = getAuth();
+        const uid = auth.currentUser?.uid;
+        if (!uid) {
+          console.log("No user logged in.");
+          return;
+        }
+        await AsyncStorage.setItem('userUID', uid);
+        const ref = doc(db, 'users', uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          setUsuario(new UsuarioClass(snap.data()));
+          const amigos = snap.data().amigos || [];
+          setCantidadAmigos(amigos.length);
+        } else {
+          console.log("No existe documento para este UID");
+        }
+      } catch (error) {
+        console.error("Error en obtenerDatos:", error);
+      }
+    };
     obtenerDatos();
   }, []);
 
@@ -234,23 +232,30 @@ export default function PerfilScreen() {
     <>
       <View style={styles.perfilMedio}>
         <View style={styles.cajitasMellizas}>
-          <Pressable style={styles.cajitasM} onPress={() => router.push('../buscarUsuario')}>
+          <Pressable style={styles.cajitasM} onPress={() => navigation.navigate('Paginas', { screen: 'buscarUsuario' })}>
             <Text style={styles.valorCajita}>28</Text>
             <Text style={styles.nombreCajita}>Viajes realizados</Text>
           </Pressable>
-          <Pressable style={styles.cajitasM} onPress={() => router.push('../buscarUsuario')}>
-            <Text style={styles.valorCajita}>47</Text>
+          <Pressable style={styles.cajitasM} onPress={() => navigation.navigate('Paginas', { screen: 'ListaAmigos' })}>
+            <Text style={styles.valorCajita}>{cantidadAmigos}</Text>
             <Text style={styles.nombreCajita}>Amigos</Text>
           </Pressable>
         </View>
-
-        <Pressable
-  style={styles.invitarAmichisCajita}
-  onPress={() => (navigation as any).navigate('Paginas', { screen: 'buscarUsuario' })}>
-  <Text style={styles.invitarAmichis}>Invitar amigos</Text>
-  <Feather name="plus-circle" size={24} color="#093659" />
-</Pressable>
-</View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
+          <Pressable
+            style={[styles.invitarAmichisCajita, { flex: 1, marginRight: 8 }]}
+            onPress={() => navigation.navigate('Paginas', { screen: 'buscarUsuario' })}>
+            <Text style={styles.invitarAmichis}>Buscar usuarios</Text>
+            <Feather name="plus-circle" size={24} color="#093659" />
+          </Pressable>
+          <Pressable
+            style={[styles.invitarAmichisCajita, { flex: 1, marginLeft: 8, backgroundColor: '#e6f0fa', borderColor: '#093659', borderWidth: 1 }]}
+            onPress={() => navigation.navigate('Paginas', { screen: 'SolicitudesAmistad' })}>
+            <Text style={[styles.invitarAmichis, { color: '#093659' }]}>Solicitudes de amistad</Text>
+            <Feather name="users" size={24} color="#093659" />
+          </Pressable>
+        </View>
+      </View>
 
       <View style={styles.opciones}>
         <Pressable style={styles.accion} onPress={() => router.push('../logueado')}>

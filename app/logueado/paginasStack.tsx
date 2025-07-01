@@ -2,10 +2,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import soporte from './paginas/soporte';
 import crearViaje from './paginas/crearViaje';
 import pagos from './paginas/pagos';
-import BuscarUsuariosScreen from './tabs/buscarUsuario';
-import NotificacionesScreen from './tabs/notificaciones';
+import BuscarUsuariosScreen from './paginas/buscarUsuario';
+import NotificacionesScreen from './paginas/notificaciones';
 import TabOneScreen from './tabs/home';
 import PerfilScreen from './tabs/perfil';
+import PerfilUserScreen from './paginas/perfilUser';
+import SolicitudesAmistadScreen from './paginas/SolicitudesAmistad';
+import ListaAmigosScreen from './paginas/ListaAmigos';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,8 +24,9 @@ export default function paginasStack() {
       <Stack.Screen name="soporte" component={soporte} />
       <Stack.Screen name="buscarUsuario" component={BuscarUsuariosScreen} />
       <Stack.Screen name="notificaciones" component={NotificacionesScreen} />
-      <Stack.Screen name="perfil" component={PerfilScreen} />
-      <Stack.Screen name="home" component={TabOneScreen} />
+      <Stack.Screen name="perfilUser" component={PerfilUserScreen} />
+      <Stack.Screen name="SolicitudesAmistad" component={SolicitudesAmistadScreen} />
+      <Stack.Screen name="ListaAmigos" component={ListaAmigosScreen} />
     </Stack.Navigator>
   );
 }

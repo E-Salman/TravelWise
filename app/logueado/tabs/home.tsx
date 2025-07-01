@@ -60,16 +60,18 @@ export default function TabOneScreen() {
       <View style={styles.actionsRow}>
         <Pressable
           style={styles.actionBtn}
-          onPress={() => navigation.navigate('Paginas', { screen: 'crearviaje' })}
+          onPress={() => navigation.navigate('Paginas', { screen: 'crearViaje' })}
         >
           <Text style={styles.actionText}>+ Crear viaje</Text>
         </Pressable>
+        {
         <Pressable
           style={styles.actionBtn}
-          onPress={() => navigation.navigate('Paginas', { screen: 'repetirviaje' })}
+          onPress={() => navigation.navigate('Paginas', { screen: 'crearViaje' })}
         >
           <Text style={styles.actionText}>+ Repetir viaje</Text>
         </Pressable>
+        }
       </View>
 
       {/* Sección "En proceso" */}

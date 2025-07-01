@@ -1,6 +1,8 @@
 // types/navigation.d.ts
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { NavigatorScreenParams } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 declare global {
   namespace ReactNavigation {
@@ -11,9 +13,7 @@ declare global {
 export type RootStackParamList = {
   TabsLayout: NavigatorScreenParams<TabsParamList>;
   logueado: NavigatorScreenParams<LogueadoStackParamList>; 
-  Paginas: {
-    screen: keyof PaginasStackParamList;
-  };
+  Paginas: NavigatorScreenParams<PaginasStackParamList>;
 };
 
 export type PaginasStackParamList = {
@@ -22,8 +22,10 @@ export type PaginasStackParamList = {
   soporte: undefined;
   buscarUsuario: undefined;
   notificaciones: undefined;
-  perfil: undefined;
-  home: undefined;
+  terminos: undefined;
+  perfilUser: { uid: string };
+  SolicitudesAmistad: undefined;
+  ListaAmigos: undefined;
 };
 
 export type TabsParamList = {
@@ -32,9 +34,8 @@ export type TabsParamList = {
   Chat: undefined;
   Menu: undefined;
   Paginas: NavigatorScreenParams<PaginasStackParamList>;
-  notificaciones: undefined;
-  perfil: undefined;
-  home: undefined;
 };
 
 export type HomeScreenProps = BottomTabScreenProps<TabsParamList, 'Home'>;
+
+export type PaginasStackNavigationProp = NativeStackNavigationProp<PaginasStackParamList>;
