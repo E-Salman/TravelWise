@@ -7,6 +7,7 @@ import { usuario } from '../../types/usuario';
 import { Text, View } from '@/components/Themed';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { PaginasStackNavigationProp } from '../../types/navigation';
+import { Feather } from '@expo/vector-icons';
 
 // Define a type that includes the UID with the UsuarioClass
 interface AmigoConUid extends usuario { uid: string; }
@@ -53,6 +54,7 @@ export default function ListaAmigosScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Flecha de volver eliminada */}
       <Text style={styles.title}>Mis amigos</Text>
       <FlatList
         data={amigos}

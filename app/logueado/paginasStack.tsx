@@ -9,6 +9,7 @@ import PerfilScreen from './tabs/perfil';
 import PerfilUserScreen from './paginas/perfilUser';
 import SolicitudesAmistadScreen from './paginas/SolicitudesAmistad';
 import ListaAmigosScreen from './paginas/ListaAmigos';
+import ConfiguracionScreen from './paginas/configuracion';
 
 const Stack = createNativeStackNavigator();
 
@@ -27,6 +28,7 @@ export default function paginasStack() {
       <Stack.Screen name="perfilUser" component={PerfilUserScreen} />
       <Stack.Screen name="SolicitudesAmistad" component={SolicitudesAmistadScreen} />
       <Stack.Screen name="ListaAmigos" component={ListaAmigosScreen} />
+      <Stack.Screen name="configuracion" component={ConfiguracionScreen} />
     </Stack.Navigator>
   );
 }

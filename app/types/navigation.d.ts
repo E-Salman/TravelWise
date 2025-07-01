@@ -26,6 +26,7 @@ export type PaginasStackParamList = {
   perfilUser: { uid: string };
   SolicitudesAmistad: undefined;
   ListaAmigos: undefined;
+  configuracion: undefined; // <-- Agregado para la pantalla de configuración
 };
 
 export type TabsParamList = {
