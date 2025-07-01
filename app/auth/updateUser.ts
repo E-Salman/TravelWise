@@ -2,18 +2,26 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { UsuarioClass } from "../types/usuario";
 
-/**
- * Actualiza los datos de usuario en Firestore.
- * @param uid - ID del usuario autenticado.
- * @param nuevosDatos - Instancia de UsuarioClass o un objeto parcial con datos nuevos.
- */
-export const updateUser = async (uid: string, nuevosDatos: UsuarioClass) => {
+export const updateUser = async (
+  uid: string,
+  usuario: UsuarioClass
+): Promise<void> => {
   try {
-    const ref = doc(db, "users", uid);
-    await updateDoc(ref, nuevosDatos.toFirestoreObject());
-    console.log("Usuario actualizado correctamente en Firestore");
+    const dataToUpdate = {
+      nombre: usuario.nombre,
+      ciudad: usuario.ciudad,
+      avatarUrl: usuario.avatarUrl,
+      visibilidad: usuario.visibilidad,
+      sugerencia: usuario.sugerencia,
+      notificaciones: usuario.notificaciones,
+      preferencias: usuario.preferencias,
+      nombreMin: usuario.nombre.toLowerCase(),
+    };
+
+    // Actualiza sólo esos campos en /users/{uid}
+    await updateDoc(doc(db, "users", uid), dataToUpdate);
   } catch (error) {
-    console.error("Error al actualizar usuario:", error);
+    console.error("Error actualizando perfil de usuario:", error);
     throw error;
   }
 };
