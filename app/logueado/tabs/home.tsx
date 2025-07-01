@@ -14,10 +14,13 @@ import { useResponsiveImageDimensions } from '../../hooks/useResponsiveImageDime
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { HomeScreenProps } from '@/app/types/navigation';
+import { useUserNotifications } from '../../hooks/useUserNotifications';
 
 export default function TabOneScreen() {
   const navigation = useNavigation<HomeScreenProps['navigation']>();
   const [search, setSearch] = useState('');
+  const notificaciones = useUserNotifications();
+  const hayNoLeidas = notificaciones.some(n => !n.leida);
 
   // Dimensiones responsivas para el mapa
   const { height: mapH } = useResponsiveDimensions({
@@ -37,6 +40,20 @@ export default function TabOneScreen() {
         onPress={() => navigation.navigate('Paginas', { screen: 'notificaciones' })}
       >
         <Feather name="bell" size={24} color="#093659" />
+        {hayNoLeidas && (
+          <View style={{
+            position: 'absolute',
+            top: 2,
+            right: 2,
+            width: 10,
+            height: 10,
+            borderRadius: 5,
+            backgroundColor: '#007aff',
+            borderWidth: 1,
+            borderColor: '#fff',
+            zIndex: 20,
+          }} />
+        )}
       </Pressable>
 
       {/* Barra de búsqueda + "Más tarde" */}

@@ -31,8 +31,6 @@ export default function ConfiguracionScreen() {
         </View>
       </View>
       <View style={styles.optionsBox}>
-        <Option icon={<Feather name="home" size={22} color="#093659" />} label="Agregar Casa" />
-        <Option icon={<Feather name="briefcase" size={22} color="#093659" />} label="Agregar Trabajo" />
         <Option icon={<Entypo name="location-pin" size={22} color="#093659" />} label="Accesos directos" sub="Administrar ubicaciones guardadas" />
         <Option icon={<Feather name="lock" size={22} color="#093659" />} label="Privacidad" sub="Administra la información que compartes con nosotros" />
         <Option icon={<MaterialIcons name="accessibility" size={22} color="#093659" />} label="Accesibilidad" sub="Administra tu configuración de accesibilidad" />

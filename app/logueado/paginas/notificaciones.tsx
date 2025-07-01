@@ -1,24 +1,43 @@
 import { StyleSheet, ScrollView, Pressable, Image, TouchableOpacity } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigation, CompositeNavigationProp  } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { TabsParamList, PaginasStackParamList } from '@/app/types/navigation';
+import { useUserNotifications } from '../../hooks/useUserNotifications';
+import { getAuth } from 'firebase/auth';
+import { marcarTodasComoLeidas, eliminarNotificacion } from '../../utils/notificacionesFirestore';
+import { arrayRemove, updateDoc, doc } from 'firebase/firestore';
+import { db } from '../../firebase';
 
 type PaginasNavProp = NativeStackNavigationProp<PaginasStackParamList>;
 type TabNavProp     = BottomTabNavigationProp<TabsParamList>;
 
 type NavigationProp = CompositeNavigationProp<PaginasNavProp, TabNavProp>;
 
-type Notificacion = {
-  id: number;
-  texto: string;
-  icono: any; // o ImageSourcePropType si quieres ser más estricto
-};
-
 export default function NotificacionesScreen() {
-const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation<NavigationProp>();
+  const notificacionesFirestore = useUserNotifications();
+  const [notificaciones, setNotificaciones] = useState(notificacionesFirestore);
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  // Sincroniza el estado local con Firestore en tiempo real
+  useEffect(() => {
+    setNotificaciones(notificacionesFirestore);
+  }, [notificacionesFirestore]);
+
+  // Marcar como leídas al abrir la pantalla (optimista)
+  useEffect(() => {
+    if (user && notificaciones.some(n => !n.leida)) {
+      const nuevas = notificaciones.map(n => n.leida ? n : { ...n, leida: true });
+      setNotificaciones(nuevas); // Optimista: actualiza UI instantáneamente
+      updateDoc(doc(db, 'users', user.uid), { notificaciones: nuevas });
+    }
+    // eslint-disable-next-line
+  }, []);
+
   const volverAHome = () => {
     // Limpia el stack de Páginas y navega a Home en el navigator padre (Tabs)
     const parent = navigation.getParent();
@@ -31,31 +50,15 @@ const navigation = useNavigation<NavigationProp>();
       navigation.navigate('Home');
     }
   };
-  const [notificaciones, setNotificaciones] = useState([
-    {
-      id: 1,
-      texto: 'Tu contraseña fue actualizada con éxito',
-      icono: require('../../../assets/images/576f1565-8f91-4a82-b5bd-5e2c0512c997.png'),
-    },
-    {
-      id: 2,
-      texto: 'Tu viaje comienza en n días!', //Cuando tengamos crear viaje con la bdd hay que arreglarlo
-      icono: require('../../../assets/images/dff890f2-3590-4d72-8662-0e4b5336d548.png'),
-    },
-    {
-      id: 3,
-      texto: 'Tienes 1 solicitud de mensaje',
-      icono: require('../../../assets/images/ee4e16c7-670f-4648-9cea-7999aa8b8623.png'),
-    },
-    {
-      id: 4,
-      texto: 'Tienes 1 nueva solicitud de amistad',
-      icono: require('../../../assets/images/f33a6724-a3e0-4f7b-a797-6bccce5000bd.png'),
-    },
-  ]);
 
-  const eliminarNotificacion = (id: number) => {
-    setNotificaciones((prev) => prev.filter((n) => n.id !== id));
+  const handleEliminar = async (notificacion: any) => {
+    if (!user) return;
+    // Elimina la notificación del array en Firestore y local
+    setNotificaciones(prev => prev.filter(n => JSON.stringify(n) !== JSON.stringify(notificacion)));
+    const userRef = doc(db, 'users', user.uid);
+    await updateDoc(userRef, {
+      notificaciones: arrayRemove(notificacion),
+    });
   };
 
   return (
@@ -68,11 +71,26 @@ const navigation = useNavigation<NavigationProp>();
         <Text style={styles.title}>Notificaciones</Text>
       </View>
 
-      {notificaciones.map((n) => (
-        <View key={n.id} style={styles.notification}>
-          <Image source={n.icono} style={styles.icon} />
-          <Text style={styles.text}>{n.texto}</Text>
-          <Pressable onPress={() => eliminarNotificacion(n.id)}>
+      {notificaciones.length === 0 && (
+        <Text style={{ textAlign: 'center', color: '#888', marginTop: 40 }}>No tienes notificaciones.</Text>
+      )}
+
+      {notificaciones.map((n, idx) => (
+        <View key={idx} style={styles.notification}>
+          <Image
+            source={
+              n.tipo === 'solicitud_amistad'
+                ? require('../../../assets/images/f33a6724-a3e0-4f7b-a797-6bccce5000bd.png')
+                : n.tipo === 'mensaje'
+                ? require('../../../assets/images/ee4e16c7-670f-4648-9cea-7999aa8b8623.png')
+                : n.tipo === 'viaje'
+                ? require('../../../assets/images/dff890f2-3590-4d72-8662-0e4b5336d548.png')
+                : require('../../../assets/images/576f1565-8f91-4a82-b5bd-5e2c0512c997.png')
+            }
+            style={styles.icon}
+          />
+          <Text style={[styles.text, !n.leida ? { fontWeight: 'bold', color: '#093659' } : {}]}>{n.texto}</Text>
+          <Pressable onPress={() => handleEliminar(n)}>
             <Image source={require('../../../assets/images/equis.png')} style={styles.closeIcon} />
           </Pressable>
         </View>
