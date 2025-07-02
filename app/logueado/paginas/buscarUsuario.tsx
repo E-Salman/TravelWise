@@ -70,6 +70,8 @@ export default function BuscarUsuariosScreen() {
 
     setLoading(true);
     try {
+      const auth = getAuth();
+      const currentUid = auth.currentUser?.uid;
       const ref = collection(db, 'users');
       const q = query(
         ref,
@@ -79,10 +81,12 @@ export default function BuscarUsuariosScreen() {
       );
       const snap = await getDocs(q);
 
-      const lista = snap.docs.map(docSnap => ({
-        id: docSnap.id,
-        usuario: new UsuarioClass(docSnap.data() as Partial<UsuarioClass>),
-      }));
+      const lista = snap.docs
+        .filter(docSnap => docSnap.id !== currentUid) // Filtrar el usuario actual
+        .map(docSnap => ({
+          id: docSnap.id,
+          usuario: new UsuarioClass(docSnap.data() as Partial<UsuarioClass>),
+        }));
       setResultados(lista);
     } catch (err) {
       console.error('Error buscando usuarios:', err);

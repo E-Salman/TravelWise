@@ -2,14 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, Image, ScrollView } from 'react-native';
 import { Feather, MaterialIcons, FontAwesome5, Entypo } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useCurrentUserData } from '../../hooks/useCurrentUserData';
 
 export default function ConfiguracionScreen() {
   const navigation = useNavigation();
-
-  // Puedes reemplazar estos datos por los del usuario logueado
-  const nombre = 'Nombre';
-  const telefono = 'telefono';
-  const mail = 'mail';
+  const { usuario, loading } = useCurrentUserData();
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -19,14 +16,14 @@ export default function ConfiguracionScreen() {
         </View>
         <View style={styles.profileRow}>
           <Image
-            source={{ uri: 'https://avatars.dicebear.com/api/adventurer/default.svg' }}
+            source={{ uri: usuario?.avatarUrl || 'https://avatars.dicebear.com/api/adventurer/default.svg' }}
             style={styles.avatar}
             resizeMode="cover"
           />
           <View style={{ marginLeft: 12 }}>
-            <Text style={styles.nombre}>{nombre}</Text>
-            <Text style={styles.info}>{telefono}</Text>
-            <Text style={styles.info}>{mail}</Text>
+            <Text style={styles.nombre}>{usuario?.nombre || ''}</Text>
+            <Text style={styles.info}>{usuario?.ciudad || ''}</Text>
+            <Text style={styles.info}>{usuario?.mail || ''}</Text>
           </View>
         </View>
       </View>

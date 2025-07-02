@@ -1,5 +1,5 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import soporte from './paginas/soporte';
+import SoporteScreen from './paginas/soporte';
 import crearViaje from './paginas/crearViaje';
 import pagos from './paginas/pagos';
 import BuscarUsuariosScreen from './paginas/buscarUsuario';
@@ -10,6 +10,7 @@ import PerfilUserScreen from './paginas/perfilUser';
 import SolicitudesAmistadScreen from './paginas/SolicitudesAmistad';
 import ListaAmigosScreen from './paginas/ListaAmigos';
 import ConfiguracionScreen from './paginas/configuracion';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -22,7 +23,7 @@ export default function paginasStack() {
     >
       <Stack.Screen name="crearViaje" component={crearViaje} />
       <Stack.Screen name="pagos" component={pagos}/>
-      <Stack.Screen name="soporte" component={soporte} />
+      <Stack.Screen name="soporte" component={SoporteScreen} />
       <Stack.Screen name="buscarUsuario" component={BuscarUsuariosScreen} />
       <Stack.Screen name="notificaciones" component={NotificacionesScreen} />
       <Stack.Screen name="perfilUser" component={PerfilUserScreen} />
