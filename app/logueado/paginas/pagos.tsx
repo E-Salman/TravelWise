@@ -1,49 +1,139 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView, Alert, Modal } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Picker } from '@react-native-picker/picker';
+import { db } from '../../firebase';
+import { getAuth } from 'firebase/auth';
+import { collection, query, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 
-import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView } from 'react-native';
+const logos = {
+  credito: require('../../../assets/images/tarjetaCredito.png'),
+  debito: require('../../../assets/images/tarjetaDebito.png'),
+  billetera: require('../../../assets/images/billeteraVirtual.png'),
+};
+const equis = require('../../../assets/images/equis.png');
 
-const paymentMethods = [
-  { id: 1, img: require('../../../assets/images/Tarjetas.png'), alt: 'Tarjetas' },
-  { id: 2, img: require('../../../assets/images/ModoMedioDePago.png'), alt: 'Modo Medio de Pago' },
-  { id: 3, img: require('../../../assets/images/MercadoPago.png'), alt: 'Mercado Pago' },
-];
+type MedioPago = {
+  id: string;
+  tipo: 'credito' | 'debito' | 'billetera';
+  nombre: string;
+  numero: string;
+  mes: string;
+  anio: string;
+  codigo: string;
+  creado?: any;
+};
 
+export default function PagosPage() {
+  const navigation = useNavigation();
+  const [medios, setMedios] = useState<MedioPago[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState<null | string>(null);
 
-const PagosPage: React.FC = () => {
+  useEffect(() => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+    const q = query(collection(db, 'users', user.uid, 'mediosPago'));
+    const unsub = onSnapshot(q, (snap) => {
+      const arr: MedioPago[] = snap.docs.map(docSnap => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          tipo: data.tipo || 'credito',
+          nombre: data.nombre || '',
+          numero: data.numero || '',
+          mes: data.mes || '',
+          anio: data.anio || '',
+          codigo: data.codigo || '',
+          creado: data.creado,
+        };
+      });
+      setMedios(arr);
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  const eliminarMedio = (id: string) => {
+    setShowDeleteModal(id);
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.backArrow}>←</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.backArrow}>←</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>Pagos</Text>
       </View>
 
       {/* Medios de Pago */}
       <Text style={styles.sectionTitle}>Medios de Pago</Text>
-      <TouchableOpacity style={styles.newButton}>
+      <TouchableOpacity style={styles.newButton} onPress={() => navigation.navigate('NuevoMedioPago')}>
         <Text style={styles.plusIcon}>＋</Text>
         <Text style={styles.newButtonText}>Nuevo Medio de Pago</Text>
       </TouchableOpacity>
-
-      {paymentMethods.map((method) => (
-        <View key={method.id} style={styles.paymentMethod}>
-          <Image source={method.img} style={styles.icon} />
-          <TouchableOpacity>
-            <Text style={styles.closeIcon}>×</Text>
-          </TouchableOpacity>
-        </View>
-      ))}
+      {loading ? (
+        <Text>Cargando...</Text>
+      ) : medios.length === 0 ? (
+        <Text style={{ color: '#888', marginTop: 8 }}>No tienes medios de pago guardados.</Text>
+      ) : (
+        medios.map((medio) => (
+          <View key={medio.id} style={styles.paymentMethod}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Image source={logos[medio.tipo] || logos['credito']} style={styles.icon} />
+              <Text style={{ fontWeight: 'bold' }}>{medio.nombre}</Text>
+              <Text style={{ color: '#555', marginLeft: 8 }}>{medio.numero.slice(-4).padStart(medio.numero.length, '•')}</Text>
+            </View>
+            <TouchableOpacity onPress={() => eliminarMedio(medio.id)}>
+              <Image source={equis} style={{ width: 22, height: 22, tintColor: '#c00' }} />
+            </TouchableOpacity>
+          </View>
+        ))
+      )}
 
       {/* Historial de Pagos */}
       <Text style={styles.sectionTitle}>Historial de Pagos</Text>
-      {[...Array(6)].map((_, i) => (
-        <View key={i} style={styles.historyItem} />
-      ))}
+      {/* Aquí puedes agregar el historial real, por ahora sin barras grises */}
+
+      {showDeleteModal && (
+        <Modal
+          visible={!!showDeleteModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowDeleteModal(null)}
+        >
+          <View style={{ flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'rgba(0,0,0,0.3)' }}>
+            <View style={{ backgroundColor:'#fff', padding:24, borderRadius:12, alignItems:'center', minWidth:300 }}>
+              <Text style={{ fontWeight:'bold', fontSize:18, marginBottom:12 }}>Eliminar medio de pago</Text>
+              <Text style={{ marginBottom:20 }}>¿Estás seguro que deseas eliminar este medio de pago?</Text>
+              <View style={{ flexDirection:'row', gap:12 }}>
+                <TouchableOpacity onPress={() => setShowDeleteModal(null)} style={{ padding:10, borderRadius:6, backgroundColor:'#eee', marginRight:8 }}>
+                  <Text>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={async () => {
+                  setShowDeleteModal(null);
+                  try {
+                    const auth = getAuth();
+                    const user = auth.currentUser;
+                    if (!user) throw new Error('Usuario no autenticado');
+                    await deleteDoc(doc(db, 'users', user.uid, 'mediosPago', showDeleteModal));
+                  } catch (e) {
+                    Alert.alert('Error', 'No se pudo eliminar el medio de pago.');
+                  }
+                }} style={{ padding:10, borderRadius:6, backgroundColor:'red' }}>
+                  <Text style={{ color:'#fff' }}>Eliminar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </ScrollView>
   );
-};
-
-export default PagosPage;
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -111,10 +201,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#777',
   },
-  historyItem: {
-    height: 12,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 4,
-    marginTop: 6,
+  pickerBox: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginTop: 8,
   },
 });

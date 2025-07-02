@@ -32,6 +32,22 @@ export default function ConfiguracionScreen() {
         <Option icon={<Feather name="lock" size={22} color="#093659" />} label="Privacidad" sub="Administra la información que compartes con nosotros" />
         <Option icon={<MaterialIcons name="accessibility" size={22} color="#093659" />} label="Accesibilidad" sub="Administra tu configuración de accesibilidad" />
         <Option icon={<FontAwesome5 name="comment-dots" size={20} color="#093659" />} label="Comunicación" sub="Elige tus medios de contacto preferidos y administra tu configuración de notificaciones" />
+        <Pressable style={styles.optionRow} onPress={() => navigation.navigate('agregarAuto')}>
+          <MaterialIcons name="directions-car" size={22} color="#093659" />
+          <View style={{ flex: 1, marginLeft: 16 }}>
+            <Text style={styles.optionLabel}>Agregar Auto</Text>
+            <Text style={styles.optionSub}>Agrega un auto a tu perfil</Text>
+          </View>
+          <Feather name="chevron-right" size={22} color="#093659" />
+        </Pressable>
+        <Pressable style={styles.optionRow} onPress={() => navigation.navigate('misAutos')}>
+          <MaterialIcons name="garage" size={22} color="#093659" />
+          <View style={{ flex: 1, marginLeft: 16 }}>
+            <Text style={styles.optionLabel}>Ver mis Autos</Text>
+            <Text style={styles.optionSub}>Consulta, edita o elimina tus autos</Text>
+          </View>
+          <Feather name="chevron-right" size={22} color="#093659" />
+        </Pressable>
       </View>
     </ScrollView>
   );
