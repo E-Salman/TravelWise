@@ -1,3 +1,4 @@
+// app/logueado/tabs/chat.tsx
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -7,149 +8,243 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
-  Modal
+  Modal,
 } from 'react-native';
-import { collection, onSnapshot, query, where, orderBy, DocumentData } from 'firebase/firestore';
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+  orderBy,
+  addDoc,
+  serverTimestamp,
+  getDoc,
+  doc,
+  getDocs,
+  DocumentData,
+} from 'firebase/firestore';
 import { db } from '../../firebase';
 import { getAuth } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 export default function ChatScreen() {
   const [chats, setChats] = useState<DocumentData[]>([]);
   const [filteredChats, setFilteredChats] = useState<DocumentData[]>([]);
   const [search, setSearch] = useState('');
-  const [groupModalVisible, setGroupModalVisible] = useState(false);
-  const [chatModalVisible, setChatModalVisible] = useState(false);
+  const [amigos, setAmigos] = useState<DocumentData[]>([]);
   const [fabMenuVisible, setFabMenuVisible] = useState(false);
+  const [chatModalVisible, setChatModalVisible] = useState(false);
+  const [groupModalVisible, setGroupModalVisible] = useState(false);
 
-  const [users, setUsers] = useState([
-    { id: '1', name: 'Carlos Peucelle', avatar: 'https://i.pravatar.cc/150?img=1' },
-    { id: '2', name: 'Sandra Rossi', avatar: 'https://i.pravatar.cc/150?img=2' },
-    { id: '3', name: 'Reinaldo Merlo', avatar: 'https://i.pravatar.cc/150?img=3' },
-    { id: '4', name: 'Leonardo Astrada', avatar: 'https://i.pravatar.cc/150?img=4' },
-    { id: '5', name: 'Felix Loustau', avatar: 'https://i.pravatar.cc/150?img=5' },
-  ]);
+  const auth = getAuth();
+  const currentUser = auth.currentUser;
+  const myUid = currentUser?.uid;
+  const router = useRouter();
 
+  // 1) Escucha tus chats
   useEffect(() => {
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-
+    if (!myUid) return;
     const q = query(
       collection(db, 'chats'),
-      where('userIds', 'array-contains', currentUser.uid),
+      where('userIds', 'array-contains', myUid),
       orderBy('lastMessage.timestamp', 'desc')
     );
-
-    const unsubscribe = onSnapshot(q, snapshot => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setChats(data);
-      setFilteredChats(data);
+    return onSnapshot(q, snap => {
+      const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setChats(arr);
+      setFilteredChats(arr);
     });
+  }, [myUid]);
 
-    return unsubscribe;
-  }, []);
-
+  // 2) Carga SOLO a tus amigos
   useEffect(() => {
-    if (search.trim() === '') {
+    if (!myUid) return;
+    (async () => {
+      const meSnap = await getDoc(doc(db, 'users', myUid));
+      if (!meSnap.exists()) return setAmigos([]);
+      const data = meSnap.data() as any;
+      const lista: string[] = Array.isArray(data.amigos) ? data.amigos : [];
+      const snaps = await Promise.all(lista.map(id => getDoc(doc(db, 'users', id))));
+      const arr = snaps
+        .filter(s => s.exists())
+        .map(s => ({ id: s.id, ...(s.data() as any) }));
+      setAmigos(arr);
+    })();
+  }, [myUid]);
+
+  // 3) Filtrar chats al tipear
+  useEffect(() => {
+    if (!search.trim()) {
       setFilteredChats(chats);
     } else {
-      const lowerSearch = search.toLowerCase();
-      const filtered = chats.filter(chat =>
-        chat.participants?.some((name: string) =>
-          name.toLowerCase().includes(lowerSearch)
+      const term = search.toLowerCase();
+      setFilteredChats(
+        chats.filter(c =>
+          c.participants?.some((n: string) => n.toLowerCase().includes(term))
         )
       );
-      setFilteredChats(filtered);
     }
   }, [search, chats]);
 
-  const renderUser = ({ item }: { item: any }) => (
-    <View style={styles.userItem}>
-      <Image source={{ uri: item.avatar }} style={styles.userAvatar} />
-      <Text style={styles.userName}>{item.name}</Text>
-    </View>
+  // 4) Crear / Abrir chat 1-a-1
+  const startChat = async (friend: any) => {
+    if (!myUid) {
+      setChatModalVisible(false);
+      setFabMenuVisible(false);
+      alert('No estás autenticado.');
+      return;
+    }
+    try {
+      // buscar chat existente
+      const ids = [myUid, friend.id].sort();
+      const q2 = query(collection(db, 'chats'), where('userIds', 'array-contains', myUid));
+      const snap2 = await getDocs(q2);
+      let chatId = '';
+      snap2.forEach(d => {
+        const uids = (d.data() as any).userIds;
+        if (
+          Array.isArray(uids) &&
+          uids.length === 2 &&
+          [...uids].sort().join() === ids.join()
+        ) {
+          chatId = d.id;
+        }
+      });
+      if (!chatId) {
+        // crear nuevo
+        let myName = 'Yo';
+        const meSnap = await getDoc(doc(db, 'users', myUid));
+        if (meSnap.exists()) {
+          myName = (meSnap.data() as any).nombre || myName;
+        }
+        const ref = await addDoc(collection(db, 'chats'), {
+          userIds: ids,
+          participants: [myName, friend.nombre],
+          lastMessage: { text: '', timestamp: serverTimestamp() },
+        });
+        chatId = ref.id;
+      }
+      setChatModalVisible(false);
+      setFabMenuVisible(false);
+      // navegacion CORRECTA a la ruta dinámica
+      router.push(`/logueado/tabs/chat/${chatId}`);
+    } catch (e) {
+      alert('Error: ' + (e as any).message);
+      setChatModalVisible(false);
+      setFabMenuVisible(false);
+    }
+  };
+
+  const renderChatItem = ({ item }: { item: any }) => (
+    <TouchableOpacity
+      style={styles.chatItem}
+      onPress={() => {
+        if (!item.id) return alert('Chat sin ID');
+        router.push(`/logueado/tabs/chat/${item.id}`);
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Ionicons
+          name="chatbubble-ellipses"
+          size={28}
+          color="#093659"
+          style={{ marginRight: 12 }}
+        />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.chatTitle}>
+            {item.participants?.join(', ') || 'Chat sin participantes'}
+          </Text>
+          <Text style={styles.chatLast}>
+            {item.lastMessage?.text || 'Sin mensajes aún'}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderAmigo = ({ item }: { item: any }) => (
+    <TouchableOpacity style={styles.userItem} onPress={() => startChat(item)}>
+      <Image source={{ uri: item.avatarUrl }} style={styles.userAvatar} />
+      <Text style={styles.userName}>{item.nombre}</Text>
+    </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
-      {/* 🔍 Barra de búsqueda arriba del todo con lupa */}
-      <View style={styles.searchBarContainer}>
+      {/* Search Bar */}
+      <View style={styles.searchBar}>
         <Ionicons name="search" size={20} color="#555" style={styles.searchIcon} />
         <TextInput
-          placeholder="Buscar por nombre de usuario..."
+          placeholder="Buscar chat..."
           placeholderTextColor="#888"
-          style={styles.searchInputWithIcon}
           value={search}
           onChangeText={setSearch}
+          style={styles.searchInput}
         />
       </View>
 
+      {/* Lista de Chats */}
       <FlatList
         data={filteredChats}
-        keyExtractor={(item) => item.id}
+        keyExtractor={i => i.id}
         ListEmptyComponent={<Text style={styles.empty}>No tenés chats todavía.</Text>}
-        renderItem={undefined}
+        renderItem={renderChatItem}
       />
 
+      {/* FAB Menu */}
       {fabMenuVisible && (
-        <View style={styles.fabOptionsContainer}>
-          <TouchableOpacity style={styles.fabOption} onPress={() => setChatModalVisible(true)}>
-            <Text style={styles.fabOptionText}>Crear nuevo chat</Text>
+        <View style={styles.fabOpts}>
+          <TouchableOpacity
+            style={styles.fabOpt}
+            onPress={() => {
+              setChatModalVisible(true);
+              setFabMenuVisible(false);
+            }}
+          >
+            <Text style={styles.fabOptText}>Crear chat</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.fabOption} onPress={() => setGroupModalVisible(true)}>
-            <Text style={styles.fabOptionText}>Crear grupo</Text>
+          <TouchableOpacity
+            style={styles.fabOpt}
+            onPress={() => {
+              setGroupModalVisible(true);
+              setFabMenuVisible(false);
+            }}
+          >
+            <Text style={styles.fabOptText}>Crear grupo</Text>
           </TouchableOpacity>
         </View>
       )}
-
-      <TouchableOpacity style={styles.fab} onPress={() => setFabMenuVisible(!fabMenuVisible)}>
-        <Ionicons name="add" size={28} color="white" />
+      <TouchableOpacity style={styles.fab} onPress={() => setFabMenuVisible(v => !v)}>
+        <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
-      <Modal
-        visible={groupModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setGroupModalVisible(false)}
-      >
+      {/* Modal: Elegir Amigo */}
+      <Modal visible={chatModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.groupModal}>
-            <View style={styles.groupHeader}>
-              <TouchableOpacity onPress={() => setGroupModalVisible(false)}>
+          <View style={styles.modalBox}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setChatModalVisible(false)}>
                 <Text style={styles.cancelText}>Cancelar</Text>
               </TouchableOpacity>
-              <Text style={styles.groupTitle}>Añadir miembros</Text>
+              <Text style={styles.modalTitle}>Elegí un amigo</Text>
             </View>
-            <FlatList
-              data={users}
-              keyExtractor={item => item.id}
-              renderItem={renderUser}
-            />
+            <FlatList data={amigos} keyExtractor={u => u.id} renderItem={renderAmigo} />
           </View>
         </View>
       </Modal>
 
-      <Modal
-        visible={chatModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setChatModalVisible(false)}
-      >
+      {/* Modal: Crear Grupo */}
+      <Modal visible={groupModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.groupModal}>
-            <View style={styles.groupHeader}>
-              <TouchableOpacity onPress={() => setChatModalVisible(false)}>
+          <View style={styles.modalBox}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setGroupModalVisible(false)}>
                 <Text style={styles.cancelText}>Cancelar</Text>
               </TouchableOpacity>
-              <Text style={styles.groupTitle}>Crear nuevo Chat</Text>
+              <Text style={styles.modalTitle}>Añadir miembros</Text>
             </View>
-            <FlatList
-              data={users}
-              keyExtractor={item => item.id}
-              renderItem={renderUser}
-            />
+            <FlatList data={amigos} keyExtractor={u => u.id} renderItem={renderAmigo} />
           </View>
         </View>
       </Modal>
@@ -158,112 +253,58 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  searchBarContainer: {
+  container: { flex: 1, backgroundColor: '#fff' },
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f0f0f0',
     borderRadius: 8,
-    paddingHorizontal: 10,
     margin: 12,
+    paddingHorizontal: 10,
   },
-  searchIcon: {
-    marginRight: 6,
-  },
-  searchInputWithIcon: {
-    flex: 1,
-    color: '#000',
-    paddingVertical: 8,
-  },
-  empty: {
-    marginTop: 40,
-    textAlign: 'center',
-    fontSize: 16,
-    color: '#888',
-  },
+  searchIcon: { marginRight: 6 },
+  searchInput: { flex: 1, paddingVertical: 8, color: '#000' },
+  empty: { marginTop: 40, textAlign: 'center', color: '#888' },
+  chatItem: { padding: 16, borderBottomWidth: 1, borderColor: '#eee' },
+  chatTitle: { fontWeight: 'bold', color: '#093659', fontSize: 16 },
+  chatLast: { color: '#888', fontSize: 13 },
   fab: {
     position: 'absolute',
     right: 20,
     bottom: 30,
     width: 60,
     height: 60,
-    backgroundColor: '#093659',
     borderRadius: 30,
+    backgroundColor: '#093659',
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 5,
   },
-  fabOptionsContainer: {
-    position: 'absolute',
-    right: 20,
-    bottom: 100,
-    alignItems: 'flex-end',
-    zIndex: 4,
-  },
-  fabOption: {
-    backgroundColor: '#093659',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
-  },
-  fabOptionText: {
-    color: 'white',
-    fontWeight: '600',
-  },
+  fabOpts: { position: 'absolute', right: 20, bottom: 100, alignItems: 'flex-end' },
+  fabOpt: { backgroundColor: '#093659', borderRadius: 12, padding: 10, marginBottom: 10 },
+  fabOptText: { color: '#fff', fontWeight: '600' },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  groupModal: {
-    width: '85%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    maxHeight: '80%',
-    elevation: 10,
-  },
-  groupHeader: {
+  modalBox: { width: '85%', backgroundColor: '#fff', borderRadius: 16, padding: 16, maxHeight: '80%' },
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  cancelText: {
-    color: '#093659',
-    fontWeight: '600',
-  },
-  groupTitle: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#333',
-  },
+  cancelText: { color: '#093659', fontWeight: '600' },
+  modalTitle: { fontSize: 16, fontWeight: 'bold' },
   userItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderBottomColor: '#eee',
     borderBottomWidth: 1,
+    borderColor: '#eee',
   },
-  userAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-  },
-  userName: {
-    fontSize: 16,
-    color: '#000',
-  },
+  userAvatar: { width: 40, height: 40, borderRadius: 20, marginRight: 12 },
+  userName: { fontSize: 16, color: '#000' },
 });
