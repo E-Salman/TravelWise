@@ -57,9 +57,6 @@ export function useResponsiveDimensions(options: Options = {}) {
       height = Math.min(height, screenHeight);
     }
 
-    console.log("width: " + width);
-    console.log("height: " + height);
-
     return { width, height };
 
   }, [screenWidth, screenHeight, widthRatio, heightRatio, aspectRatio, maintainAspectRatio, maxWidth, maxHeight]);

@@ -190,7 +190,7 @@ export default function UserProfileScreen() {
             setBloqueado(false);
           }
           if (miUid) {
-            const miSnap = await getDoc(doc(db, 'users', miUid));
+            const miSnap = await getDoc(doc(db, 'users', miUid));            
             if (miSnap.exists()) {
               const misBloqueados = miSnap.data().bloqueados || [];
               setEstaBloqueadoPorMi(misBloqueados.includes(uid));
