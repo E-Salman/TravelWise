@@ -28,4 +28,4 @@ const initFirebase = (): void => {
 // Ensure Firebase is initialized on import
 initFirebase();
 
-export { auth, db };
+export { auth, db, app as firebaseApp };

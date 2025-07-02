@@ -13,11 +13,28 @@ declare global {
 export type RootStackParamList = {
   TabsLayout: NavigatorScreenParams<TabsParamList>;
   logueado: NavigatorScreenParams<LogueadoStackParamList>; 
-  Paginas: NavigatorScreenParams<PaginasStackParamList>;
+  Paginas: NavigatorScreenParams<PaginasStackParamList> & {
+    screen: string;
+    params?: {
+      auto?: string;
+      origen?: string;
+      destino?: string;
+      pasajeros?: string;
+      pago?: string;
+      fecha?: string;
+    };
+  };
 };
 
 export type PaginasStackParamList = {
-  crearViaje: undefined;
+  crearViaje: {
+    auto?: string;
+    origen?: string;
+    destino?: string;
+    pasajeros?: string;
+    pago?: string;
+    fecha?: string;
+  } | undefined;
   pagos: undefined;
   soporte: undefined;
   buscarUsuario: undefined;
