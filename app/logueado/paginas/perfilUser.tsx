@@ -249,7 +249,10 @@ export default function UserProfileScreen() {
       {/* CABECERA PERFIL */}
       <View style={styles.cabeceraPerfil}>
         <View style={styles.headerRow}>
-          {/* Flecha de volver eliminada */}
+          {/* Flecha de volver */}
+          <Pressable onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
+            <Feather name="arrow-left" size={28} color="#093659" />
+          </Pressable>
           <Text style={[styles.headerTitle, { backgroundColor: 'transparent' }]}>Perfil</Text>
           {/* Botón de configuración eliminado */}
         </View>

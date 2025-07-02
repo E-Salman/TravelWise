@@ -20,7 +20,7 @@ export default function TabOneScreen() {
   const navigation = useNavigation<HomeScreenProps['navigation']>();
   const [search, setSearch] = useState('');
   const notificaciones = useUserNotifications();
-  const hayNoLeidas = notificaciones.some(n => !n.leida);
+  const hayNoLeidas = Array.isArray(notificaciones) && notificaciones.some(n => !n.leida);
 
   // Dimensiones responsivas para el mapa
   const { height: mapH } = useResponsiveDimensions({
@@ -89,6 +89,7 @@ export default function TabOneScreen() {
           <Text style={styles.actionText}>+ Repetir viaje</Text>
         </Pressable>
         }
+    
       </View>
 
       {/* Sección "En proceso" */}

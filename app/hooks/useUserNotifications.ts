@@ -20,7 +20,9 @@ export function useUserNotifications() {
     const ref = doc(db, 'users', user.uid);
     const unsub = onSnapshot(ref, (snap) => {
       const data = snap.data();
-      setNotificaciones(data?.notificaciones || []);
+      // Aseguramos que siempre sea un array
+      const raw = data?.notificaciones;
+      setNotificaciones(Array.isArray(raw) ? raw : []);
     });
     return () => unsub();
   }, []);
