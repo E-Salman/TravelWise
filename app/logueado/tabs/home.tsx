@@ -154,6 +154,7 @@ export default function TabOneScreen() {
             <Text style={styles.actionText}>+ Repetir viaje</Text>
           </Pressable>
         }
+    
       </View>
 
       {/* Sección "En proceso" */}
