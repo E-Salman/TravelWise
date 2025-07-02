@@ -1,5 +1,5 @@
 // app/logueado/tabs/home.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,21 @@ import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { HomeScreenProps } from '@/app/types/navigation';
 import { useUserNotifications } from '../../hooks/useUserNotifications';
+import { firebaseApp } from '@/app/firebase';
+import { getAuth } from 'firebase/auth';
+import { collection, getDocs, getFirestore } from 'firebase/firestore';
+import { useFocusEffect } from '@react-navigation/native';
+
+type Viaje = {
+  id: string;
+  auto: string;
+  origen: string;
+  destino: string;
+  pasajeros: string;
+  pago: string;
+  fecha: string;
+  [key: string]: any;
+};
 
 export default function TabOneScreen() {
   const navigation = useNavigation<HomeScreenProps['navigation']>();
@@ -22,12 +37,62 @@ export default function TabOneScreen() {
   const notificaciones = useUserNotifications();
   const hayNoLeidas = Array.isArray(notificaciones) && notificaciones.some(n => !n.leida);
 
+  const auth = getAuth(firebaseApp);
+  const db = getFirestore(firebaseApp);
+
   // Dimensiones responsivas para el mapa
   const { height: mapH } = useResponsiveDimensions({
     widthRatio: 1,
     heightRatio: 0.4,
     maintainAspectRatio: true,
   });
+
+  const [viajes, setViajes] = useState<Viaje[]>([]);
+  
+  useEffect(() => {
+    async function fetchViajes() {
+      const user = auth.currentUser;
+      if (!user) return;
+      const viajesRef = collection(db, 'users', user.uid, 'viajes');
+      const snapshot = await getDocs(viajesRef);
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Viaje[];
+      setViajes(data.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')));
+    }
+    fetchViajes();
+  }, [auth.currentUser]);
+
+  // Handler for 'Repetir viaje'
+  const handleRepetirViaje = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert('Debes iniciar sesión para repetir un viaje.');
+      return;
+    }
+    try {
+      const userDocRef = collection(db, 'users');
+      const userDocSnap = await getDocs(userDocRef);
+      // Find the current user's document
+      const userDoc = userDocSnap.docs.find(doc => doc.id === user.uid);
+      if (!userDoc || !userDoc.data().lastViaje) {
+        alert('No tienes viajes previos para repetir.');
+        return;
+      }
+      const lastViaje = userDoc.data().lastViaje;
+      navigation.navigate('Paginas', {
+        screen: 'crearViaje',
+        params: {
+          auto: lastViaje.auto,
+          origen: lastViaje.origen,
+          destino: lastViaje.destino,
+          pasajeros: lastViaje.pasajeros,
+          pago: lastViaje.pago,
+          fecha: lastViaje.fecha,
+        },
+      });
+    } catch (error) {
+      alert('Error al obtener el último viaje: ' + (error as Error).message);
+    }
+  };
 
   // URL del embed de Google Maps (tu API Key ya está incluida)
   const mapSrc = `https://www.google.com/maps/embed/v1/place?key=AIzaSyA_sve6Kikr_ABPr_RrnmR8hU4i-ixJBdA&q=-34.6037,-58.3816&zoom=14&maptype=roadmap`;
@@ -82,12 +147,12 @@ export default function TabOneScreen() {
           <Text style={styles.actionText}>+ Crear viaje</Text>
         </Pressable>
         {
-        <Pressable
-          style={styles.actionBtn}
-          onPress={() => navigation.navigate('Paginas', { screen: 'crearViaje' })}
-        >
-          <Text style={styles.actionText}>+ Repetir viaje</Text>
-        </Pressable>
+          <Pressable
+            style={styles.actionBtn}
+            onPress={handleRepetirViaje}
+          >
+            <Text style={styles.actionText}>+ Repetir viaje</Text>
+          </Pressable>
         }
     
       </View>
