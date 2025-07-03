@@ -50,9 +50,14 @@ export type PaginasStackParamList = {
 export type TabsParamList = {
   Home: undefined;
   Perfil: undefined;
-  Chat: undefined;
+  Chat: NavigatorScreenParams<ChatStackParamList>;
   Menu: undefined;
   Paginas: NavigatorScreenParams<PaginasStackParamList>;
+};
+
+export type ChatStackParamList = {
+  ChatList: undefined;
+  ChatDetail: { chatId: string };
 };
 
 export type HomeScreenProps = BottomTabScreenProps<TabsParamList, 'Home'>;
