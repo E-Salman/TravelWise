@@ -8,6 +8,7 @@ import {
   StyleSheet,
   TextInput,
   Image,
+  ScrollView,
 } from 'react-native';
 import { useResponsiveDimensions } from '../../hooks/useResponsiveDimensions';
 import { useResponsiveImageDimensions } from '../../hooks/useResponsiveImageDimensions';
@@ -120,7 +121,11 @@ export default function TabOneScreen() {
   }, [auth.currentUser]);
 
   return (
-    <View style={styles.root}>
+    <ScrollView style={styles.root} contentContainerStyle={{ flexGrow: 1 }}>
+      {/* Logo superior centrado */}
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', marginTop: 5}}>
+        <Text style={{ fontWeight: '800', color: '#093659', fontSize: 32, textAlign: 'center' }}>TRAVELWISE</Text>
+      </View>
       {/* Campana de notificaciones */}
       <Pressable
         style={styles.bell}
@@ -145,7 +150,7 @@ export default function TabOneScreen() {
 
       {/* Barra de búsqueda + "Más tarde" */}
       <View style={styles.searchRow}>
-        <View style={styles.searchBox}>
+        <Pressable style={styles.searchBox} onPress={() => navigation.navigate('Paginas', { screen: 'buscarViaje' })}>
           <Feather name="search" size={16} color="#555" style={{ marginRight: 6 }} />
           <TextInput
             style={styles.searchInput}
@@ -153,8 +158,10 @@ export default function TabOneScreen() {
             placeholderTextColor="#888"
             value={search}
             onChangeText={setSearch}
+            editable={false}
+            pointerEvents="none"
           />
-        </View>
+        </Pressable>
         <Pressable style={styles.laterBtn}>
           <Text style={styles.laterText}>Más tarde</Text>
         </Pressable>
@@ -215,7 +222,7 @@ export default function TabOneScreen() {
       <View style={styles.placeholderCard} />
 
       {/* Sección "Mis Solicitudes" */}
-      <Text style={styles.sectionTitle}>Mis Solicitudes</Text>
+      {/* <Text style={styles.sectionTitle}>Mis Solicitudes</Text>
       {loadingSolicitudes ? (
         <Text style={{ color: '#888' }}>Cargando...</Text>
       ) : misSolicitudes.length === 0 ? (
@@ -230,8 +237,8 @@ export default function TabOneScreen() {
             </View>
           </View>
         ))
-      )}
-    </View>
+      )} */}
+    </ScrollView>
   );
 }
 
@@ -250,7 +257,7 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 56,
+    marginTop: 15,
     marginBottom: 12,
   },
   searchBox: {

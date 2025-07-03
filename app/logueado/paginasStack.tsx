@@ -16,6 +16,8 @@ import EditarAutoScreen from './paginas/editarAuto';
 import PagosPage from './paginas/pagos';
 import NuevoMedioPago from './paginas/nuevoMedioPago';
 import MisSolicitudesScreen from './paginas/misSolicitudes';
+import EditarViajeScreen from './paginas/editarViaje';
+import BuscarViajeScreen from './paginas/buscarViaje';
 
 const Stack = createNativeStackNavigator();
 
@@ -40,6 +42,8 @@ export default function paginasStack() {
       <Stack.Screen name="EditarAuto" component={EditarAutoScreen} />
       <Stack.Screen name="nuevoMedioPago" component={NuevoMedioPago} />
       <Stack.Screen name="misSolicitudes" component={MisSolicitudesScreen} />
+      <Stack.Screen name="editarViaje" component={EditarViajeScreen} />
+      <Stack.Screen name="buscarViaje" component={BuscarViajeScreen} />
     </Stack.Navigator>
   );
 }

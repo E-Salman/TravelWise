@@ -64,6 +64,7 @@ export default function crearViajeScreen() {
   const [viajesPendientes, setViajesPendientes] = useState<any[]>([]);
   const [solicitudesCreadas, setSolicitudesCreadas] = useState<Viaje[]>([]);
   const [loadingSolicitudes, setLoadingSolicitudes] = useState(true);
+  const [precioAsiento, setPrecioAsiento] = useState('');
   
   // Google Maps API Key (replace with your actual key)
   const GOOGLE_MAPS_APIKEY = 'AIzaSyA_sve6Kikr_ABPr_RrnmR8hU4i-ixJBdA';
@@ -208,10 +209,26 @@ export default function crearViajeScreen() {
   const db = getFirestore(firebaseApp);
 
   // Debug: log prefill and state values before validation
+  // Helper para obtener coordenadas de una dirección
+  async function getCoordsFromAddress(address: string): Promise<{ lat: number; lng: number } | null> {
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_APIKEY}`
+      );
+      const data = await response.json();
+      if (data.results && data.results[0] && data.results[0].geometry && data.results[0].geometry.location) {
+        return data.results[0].geometry.location;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
   async function handleConfirmar() {
-    console.log('auto:', auto, 'origen:', origen, 'destino:', destino, 'pasajeros:', pasajeros, 'pago:', pago, 'fecha:', fecha);
+    console.log('auto:', auto, 'origen:', origen, 'destino:', destino, 'pasajeros:', pasajeros, 'pago:', pago, 'fecha:', fecha, 'precioAsiento:', precioAsiento);
     // Validate all fields
-    if (!auto || !origen || !destino || !pasajeros || !pago || !fecha) {
+    if (!auto || !origen || !destino || !pasajeros || !pago || !fecha || !precioAsiento) {
       alert('Por favor, completa todos los campos antes de confirmar.');
       return;
     }
@@ -222,6 +239,22 @@ export default function crearViajeScreen() {
         return;
       }
       const autoObj = typeof auto === 'string' ? JSON.parse(auto) : auto;
+      // Obtener coordenadas de origen y destino
+      let origenCoords = null;
+      let destinoCoords = null;
+      if (Platform.OS === 'web') {
+        origenCoords = await getCoordsFromAddress(origen);
+        destinoCoords = await getCoordsFromAddress(destino);
+      } else {
+        // Si usaste GooglePlacesAutocomplete, deberías guardar coords en el estado
+        // pero por compatibilidad, también hacemos fetch si no hay coords
+        origenCoords = await getCoordsFromAddress(origen);
+        destinoCoords = await getCoordsFromAddress(destino);
+      }
+      if (!origenCoords || !destinoCoords) {
+        alert('No se pudieron obtener las coordenadas de origen o destino.');
+        return;
+      }
       const viaje = {
         auto: autoObj,
         origen,
@@ -229,7 +262,10 @@ export default function crearViajeScreen() {
         pasajeros,
         pago,
         fecha: fecha.toISOString(),
+        precioAsiento,
         createdAt: serverTimestamp(),
+        origenCoords,
+        destinoCoords,
       };
       await addDoc(collection(db, 'users', user.uid, 'viajes'), viaje);
       await setDoc(doc(db, 'users', user.uid), { lastViaje: viaje }, { merge: true });
@@ -250,6 +286,12 @@ export default function crearViajeScreen() {
       }
     } catch {}
   }
+
+  const handlePrecioAsientoChange = (text: string) => {
+    // Solo permitir números y punto
+    const sanitized = text.replace(/[^0-9.]/g, '');
+    setPrecioAsiento(sanitized);
+  };
 
   return (
     <View style={styles.container}>
@@ -424,6 +466,18 @@ export default function crearViajeScreen() {
           </Picker>
         </View>
 
+        {/* Precio por asiento */}
+        <View style={styles.inputBox}>
+          <Image source={require('@/assets/images/Tarjetas.png')} style={styles.icon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Precio por asiento ($)"
+            keyboardType="numeric"
+            value={precioAsiento}
+            onChangeText={handlePrecioAsientoChange}
+          />
+        </View>
+
         {/* Fecha */}
         {Platform.OS === 'web' ? (
           <View style={styles.inputBox}>
@@ -525,15 +579,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#093659',
   },
-  inputBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EDEDED',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 6,
-    marginBottom: 12,
-  },
   icon: {
     width: 24,
     height: 24,
@@ -614,5 +659,14 @@ const styles = StyleSheet.create({
   solicitudFecha: {
     fontSize: 13,
     color: '#555',
+  },
+  inputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EDEDED',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 6,
+    marginBottom: 12,
   },
 });
