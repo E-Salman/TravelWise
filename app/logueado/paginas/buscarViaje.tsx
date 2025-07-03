@@ -121,6 +121,10 @@ export default function BuscarViajeScreen() {
     const usuariosSnap = await getDocs(usuariosRef);
     let viajes: any[] = [];
     for (const usuarioDoc of usuariosSnap.docs) {
+      // Filtrado de bloqueados: si el usuario creador tiene bloqueado al actual, no mostrar sus viajes
+      const usuarioData = usuarioDoc.data();
+      const bloqueados = Array.isArray(usuarioData.bloqueados) ? usuarioData.bloqueados : [];
+      if (currentUser && bloqueados.includes(currentUser.uid)) continue;
       const viajesRef = collection(db, `users/${usuarioDoc.id}/viajes`);
       const viajesSnap = await getDocs(viajesRef);
       viajes = viajes.concat(
