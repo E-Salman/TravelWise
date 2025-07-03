@@ -39,83 +39,26 @@ export default function ConfiguracionScreen() {
 
 function Option({ icon, label, sub }: { icon: React.ReactNode; label: string; sub?: string }) {
   return (
-    <Pressable style={styles.optionRow}>
+    <View style={styles.optionRow}>
       {icon}
-      <View style={{ flex: 1, marginLeft: 16 }}>
+      <View style={{ marginLeft: 10 }}>
         <Text style={styles.optionLabel}>{label}</Text>
         {sub && <Text style={styles.optionSub}>{sub}</Text>}
       </View>
-      <Feather name="chevron-right" size={22} color="#093659" />
-    </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 0,
-    backgroundColor: '#fff',
-    flexGrow: 1,
-  },
-  headerBox: {
-    backgroundColor: '#e6f0fa',
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    padding: 18,
-    paddingBottom: 12,
-    marginBottom: 8,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#093659',
-    marginBottom: 12,
-  },
-  profileRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    backgroundColor: 'transparent',
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#ccc',
-  },
-  nombre: {
-    fontWeight: 'bold',
-    fontSize: 18,
-    color: '#093659',
-  },
-  info: {
-    color: '#555',
-    fontSize: 14,
-  },
-  optionsBox: {
-    backgroundColor: '#fff',
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-    padding: 0,
-    marginHorizontal: 0,
-    marginTop: 0,
-  },
-  optionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    backgroundColor: '#fff',
-  },
-  optionLabel: {
-    fontSize: 16,
-    color: '#093659',
-    fontWeight: '600',
-  },
-  optionSub: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
+  container: { padding: 20, backgroundColor: '#fff' },
+  headerBox: { marginBottom: 24 },
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#093659' },
+  profileRow: { flexDirection: 'row', alignItems: 'center', marginTop: 16 },
+  avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#eee' },
+  nombre: { fontSize: 18, fontWeight: 'bold', color: '#093659' },
+  info: { fontSize: 14, color: '#666' },
+  optionsBox: { marginTop: 32 },
+  optionRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
+  optionLabel: { fontSize: 16, color: '#093659', fontWeight: '600' },
+  optionSub: { fontSize: 13, color: '#666' },
 });

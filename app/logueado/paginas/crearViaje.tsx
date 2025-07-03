@@ -3,7 +3,6 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
-  TextInput,
   Platform,
 } from 'react-native';
 import { View, Text } from '@/components/Themed';
@@ -19,9 +18,8 @@ import type { PaginasStackParamList } from '@/app/types/navigation';
 
 // Firebase imports
 import { getAuth } from 'firebase/auth';
-import { getFirestore, collection, addDoc, serverTimestamp, arrayRemove, updateDoc, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { firebaseApp } from '@/app/firebase';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let GooglePlacesAutocomplete: any = null;
 if (Platform.OS !== 'web') {
@@ -29,7 +27,6 @@ if (Platform.OS !== 'web') {
 }
 
 export default function crearViajeScreen() {
-  const router = useRouter();
   const navigation = useNavigation<HomeScreenProps['navigation']>();
   const route = useRoute<RouteProp<PaginasStackParamList, 'crearViaje'>>();
   const prefill = route.params || {};

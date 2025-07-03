@@ -37,54 +37,31 @@ export default function SoporteScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>Soporte</Text>
       </View>
-
-      {/* Barra de búsqueda */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#555" style={styles.searchIcon} />
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="¡Hola! ¿En qué podemos ayudarte?"
-          placeholderTextColor="#888"
-          style={styles.searchInput}
-        />
-      </View>
-
-      {/* Línea separadora */}
-      <View style={styles.divider} />
-
-      {/* Lista de opciones */}
+      <TextInput
+        style={styles.input}
+        placeholder="Buscar..."
+        value={search}
+        onChangeText={setSearch}
+      />
       <FlatList
         data={filtered}
         keyExtractor={item => item.key}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => {
-              // Aquí podés navegar a otra pantalla según item.key
-              // p.ej. navigation.navigate('DetalleSoporte', { tipo: item.key });
-            }}
-          >
-            <Ionicons name={item.icon as any} size={20} color="#093659" style={styles.rowIcon} />
-            <Text style={styles.rowLabel}>{item.label}</Text>
-            <Ionicons name="chevron-forward" size={20} color="#093659" />
-          </TouchableOpacity>
+          <View style={styles.option}>
+            <Ionicons name={item.icon as any} size={22} color="#093659" style={{ marginRight: 12 }} />
+            <Text style={styles.optionLabel}>{item.label}</Text>
+          </View>
         )}
-        ItemSeparatorComponent={() => <View style={styles.divider} />}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container:      { flex: 1, backgroundColor: '#fff' },
-  header:         { flexDirection: 'row', alignItems: 'center', padding: 16 },
-  title:          { fontSize: 20, fontWeight: 'bold', color: '#093659', marginLeft: 12 },
-  searchContainer:{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f0f0', borderRadius: 8, marginHorizontal: 16, paddingHorizontal: 10, marginBottom: 8 },
-  searchIcon:     { marginRight: 6 },
-  searchInput:    { flex: 1, paddingVertical: 8, color: '#000' },
-  divider:        { height: 1, backgroundColor: '#eee', marginVertical: 4 },
-  row:            { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16 },
-  rowIcon:        { marginRight: 12 },
-  rowLabel:       { flex: 1, fontSize: 16, color: '#333' },
+  container: { flex: 1, backgroundColor: '#fff', padding: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  title: { fontSize: 18, fontWeight: 'bold', color: '#093659', marginLeft: 16 },
+  input: { backgroundColor: '#f0f0f0', borderRadius: 8, padding: 10, marginBottom: 16 },
+  option: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderColor: '#eee' },
+  optionLabel: { fontSize: 16, color: '#093659' },
 });

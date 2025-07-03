@@ -38,9 +38,7 @@ export default function TerminosScreen() {
 
         <Text style={styles.heading}>2. Uso de la aplicación</Text>
         <Text style={styles.paragraph}>
-          Sólo puedes usar la app para fines lícitos y de acuerdo con nuestra Política de
-          privacidad. No debes interferir con el funcionamiento de los servidores o redes
-          conectadas a TravelWise.
+          Solo puedes usar TravelWise para fines legales y de acuerdo con estos términos.
         </Text>
 
         <Text style={styles.heading}>3. Propiedad intelectual</Text>
@@ -72,15 +70,9 @@ export default function TerminosScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-  },
-  title: { fontSize: 18, fontWeight: 'bold', color: '#093659', marginLeft: 12 },
-  content: { padding: 16, paddingBottom: 40 },
-  heading: { fontSize: 16, fontWeight: 'bold', color: '#093659', marginTop: 16 },
-  paragraph: { fontSize: 14, color: '#333', lineHeight: 20, marginTop: 8 },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#f0f0f0' },
+  title: { fontSize: 18, fontWeight: 'bold', color: '#093659', marginLeft: 16 },
+  content: { padding: 16 },
+  paragraph: { fontSize: 15, color: '#333', marginBottom: 12 },
+  heading: { fontSize: 16, fontWeight: 'bold', color: '#093659', marginTop: 16, marginBottom: 6 },
 });
