@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, ActivityIndicator, StyleSheet, View as RNView } from 'react-native';
+import { FlatList, ActivityIndicator, StyleSheet, View as RNView, Pressable } from 'react-native';
 import { getAuth } from 'firebase/auth';
 import { collection, getDocs, getFirestore } from 'firebase/firestore';
 import { firebaseApp } from '../../firebase';
 import { Text, View } from '@/components/Themed';
 import { Feather } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 type Viaje = {
   id: string;
@@ -22,6 +23,7 @@ export default function MisSolicitudesScreen() {
   const [loading, setLoading] = useState(true);
   const auth = getAuth(firebaseApp);
   const db = getFirestore(firebaseApp);
+  const navigation = useNavigation();
 
   useEffect(() => {
     async function fetchViajes() {
@@ -47,7 +49,12 @@ export default function MisSolicitudesScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Mis Solicitudes</Text>
+      <RNView style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+        <Pressable onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
+          <Feather name="arrow-left" size={26} color="#093659" />
+        </Pressable>
+        <Text style={styles.title}>Mis Solicitudes</Text>
+      </RNView>
       <FlatList
         data={viajes}
         keyExtractor={item => item.id}
