@@ -9,6 +9,8 @@ import {
   TextInput,
   Image,
   ScrollView,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { useResponsiveDimensions } from '../../hooks/useResponsiveDimensions';
 import { useResponsiveImageDimensions } from '../../hooks/useResponsiveImageDimensions';
@@ -18,7 +20,7 @@ import { HomeScreenProps } from '@/app/types/navigation';
 import { useUserNotifications } from '../../hooks/useUserNotifications';
 import { firebaseApp } from '@/app/firebase';
 import { getAuth } from 'firebase/auth';
-import { collection, getDocs, getFirestore } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, updateDoc, arrayRemove, deleteDoc } from 'firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
 
 type Viaje = {
@@ -101,6 +103,8 @@ export default function TabOneScreen() {
   // Nuevo: Mis Solicitudes (viajes creados por el usuario y pendientes)
   const [misSolicitudes, setMisSolicitudes] = useState<Viaje[]>([]);
   const [loadingSolicitudes, setLoadingSolicitudes] = useState(true);
+  const [viajesPasajero, setViajesPasajero] = useState<Viaje[]>([]);
+  const [activeTab, setActiveTab] = useState<'misSolicitudes' | 'pasajero'>('misSolicitudes');
 
   useEffect(() => {
     async function fetchMisSolicitudes() {
@@ -119,6 +123,196 @@ export default function TabOneScreen() {
     }
     fetchMisSolicitudes();
   }, [auth.currentUser]);
+
+  useEffect(() => {
+    async function fetchViajesPasajero() {
+      const user = auth.currentUser;
+      if (!user) return;
+      const usuariosRef = collection(db, 'users');
+      const usuariosSnap = await getDocs(usuariosRef);
+      let viajes: Viaje[] = [];
+      for (const usuarioDoc of usuariosSnap.docs) {
+        const viajesRef = collection(db, `users/${usuarioDoc.id}/viajes`);
+        const viajesSnap = await getDocs(viajesRef);
+        viajes = viajes.concat(
+          viajesSnap.docs
+            .map(docu => {
+              const data = docu.data();
+              return {
+                id: `${usuarioDoc.id}_${docu.id}`,
+                auto: data.auto,
+                origen: data.origen,
+                destino: data.destino,
+                pasajeros: data.pasajeros,
+                pago: data.pago,
+                fecha: data.fecha,
+                userId: usuarioDoc.id,
+                ...data
+              };
+            })
+            .filter((v: any) => Array.isArray(v.listaPasajeros) && v.listaPasajeros.some((p: any) => p.uid === user.uid))
+        );
+      }
+      // Solo viajes futuros
+      const now = new Date();
+      setViajesPasajero(
+        viajes.filter((v: any) => typeof v.fecha === 'string' && new Date(v.fecha) > now)
+          .sort((a: any, b: any) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+      );
+    }
+    fetchViajesPasajero();
+  }, [auth.currentUser]);
+
+  // Función para cancelar viaje (como pasajero o creador)
+  const handleCancelarViaje = async (viaje: any) => {
+    const user = auth.currentUser;
+    if (!user) return;
+    const fechaViaje = new Date(viaje.fecha);
+    const ahora = new Date();
+    const diffDias = (fechaViaje.getTime() - ahora.getTime()) / (1000 * 60 * 60 * 24);
+    if (diffDias < 7) {
+      alert('Solo puedes cancelar el viaje hasta 7 días antes de la fecha de salida.');
+      return;
+    }
+    // Si es creador, elimina el viaje
+    if (viaje.userId === user.uid) {
+      await deleteDoc(doc(db, 'users', user.uid, 'viajes', viaje.id.split('_')[1]));
+      setViajes(viajes.filter(v => v.id !== viaje.id.split('_')[1]));
+      alert('Viaje cancelado correctamente.');
+    } else {
+      // Si es pasajero, se elimina de la lista de pasajeros
+      const viajeRef = doc(db, `users/${viaje.userId}/viajes/${viaje.id.split('_')[1]}`);
+      await updateDoc(viajeRef, {
+        listaPasajeros: arrayRemove({ uid: user.uid, nombre: user.displayName || '', mail: user.email || '' })
+      });
+      setViajesPasajero(viajesPasajero.filter(v => v.id !== viaje.id));
+      alert('Te has dado de baja del viaje.');
+    }
+  };
+
+  // Filtrar viajes confirmados (menos de 7 días)
+  const now = new Date();
+  const viajesConfirmadosCreador = misSolicitudes.filter(v => {
+    const diffDias = (new Date(v.fecha).getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+    return diffDias < 7 && diffDias >= 0;
+  });
+  const viajesConfirmadosPasajero = viajesPasajero.filter(v => {
+    const diffDias = (new Date(v.fecha).getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+    return diffDias < 7 && diffDias >= 0;
+  });
+  const viajesConfirmados = [...viajesConfirmadosCreador, ...viajesConfirmadosPasajero]
+    .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+
+  const [showViajeModal, setShowViajeModal] = useState(false);
+  const [miembrosViaje, setMiembrosViaje] = useState<{ creador: any, pasajeros: any[] } | null>(null);
+  const [loadingMiembros, setLoadingMiembros] = useState(false);
+  const [viajeSeleccionado, setViajeSeleccionado] = useState<any | null>(null);
+
+  // Función para abrir modal y cargar miembros
+  const handleVerMiembros = async (viaje: any) => {
+    setShowViajeModal(true);
+    setLoadingMiembros(true);
+    setViajeSeleccionado(viaje);
+    try {
+      // Obtener datos del creador SIEMPRE desde la colección users
+      let creador = null;
+      let pasajeros: any[] = [];
+      const usuariosSnap = await getDocs(collection(db, 'users'));
+      let creadorId = viaje.userId;
+      if (!creadorId && auth.currentUser) {
+        creadorId = auth.currentUser.uid;
+      }
+      if (creadorId) {
+        const creadorDoc = usuariosSnap.docs.find(docu => docu.id === creadorId);
+        if (creadorDoc) {
+          const data = creadorDoc.data();
+          creador = {
+            nombre: data.nombre || data.displayName || data.mail || 'Sin nombre',
+            mail: data.mail || (data.email ?? ''),
+            avatarUrl: data.avatarUrl || '',
+          };
+        } else {
+          creador = { nombre: 'Sin nombre', mail: '', avatarUrl: '' };
+        }
+      } else {
+        creador = { nombre: 'Sin nombre', mail: '', avatarUrl: '' };
+      }
+      // Pasajeros: buscar avatarUrl actualizado por uid
+      if (Array.isArray(viaje.listaPasajeros)) {
+        pasajeros = await Promise.all(
+          viaje.listaPasajeros.map(async (p: any) => {
+            let avatarUrl = '';
+            if (p.uid) {
+              const userDoc = usuariosSnap.docs.find(docu => docu.id === p.uid);
+              if (userDoc) {
+                avatarUrl = userDoc.data().avatarUrl || '';
+              }
+            }
+            return {
+              nombre: p.nombre || p.mail || 'Sin nombre',
+              mail: p.mail || '',
+              avatarUrl,
+            };
+          })
+        );
+      }
+      setMiembrosViaje({ creador, pasajeros });
+    } catch (e) {
+      setMiembrosViaje(null);
+    }
+    setLoadingMiembros(false);
+  };
+
+  const DEFAULT_AVATAR_URL = 'https://ui-avatars.com/api/?name=User&background=eee&color=888&size=128';
+
+  // Funciones auxiliares para renderizar miembros del viaje con foto de perfil (avatarUrl)
+  const renderCreador = (creador: any) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, width: '100%' }}>
+      <Image
+        source={{ uri: creador?.avatarUrl && creador.avatarUrl.length > 0 ? creador.avatarUrl : DEFAULT_AVATAR_URL }}
+        style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10, backgroundColor: '#eee' }}
+        resizeMode="cover"
+      />
+      <View>
+        <Text style={{ fontWeight: 'bold', color: '#093659' }}>Creador</Text>
+        <Text>{creador?.nombre}</Text>
+      </View>
+    </View>
+  );
+
+  const renderPasajeros = (pasajeros: any[] | undefined) => (
+    <View style={{ width: '100%' }}>
+      <Text style={{ fontWeight: 'bold', marginBottom: 6, color: '#093659' }}>Pasajeros</Text>
+      {Array.isArray(pasajeros) && pasajeros.length === 0 ? (
+        <Text style={{ color: '#888', marginBottom: 8 }}>No hay pasajeros.</Text>
+      ) : Array.isArray(pasajeros) ? (
+        pasajeros.map((p, i) => (
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+            <Image
+              source={{ uri: p.avatarUrl && p.avatarUrl.length > 0 ? p.avatarUrl : DEFAULT_AVATAR_URL }}
+              style={{ width: 32, height: 32, borderRadius: 16, marginRight: 8, backgroundColor: '#eee' }}
+              resizeMode="cover"
+            />
+            <Text>{p.nombre}</Text>
+          </View>
+        ))
+      ) : (
+        <Text style={{ color: '#888', marginBottom: 8 }}>No hay pasajeros.</Text>
+      )}
+    </View>
+  );
+
+  // Utilidad para formatear fecha local
+  function formatFechaLocal(fechaStr: string) {
+    if (!fechaStr) return '';
+    // Si ya es YYYY-MM-DD, devolver tal cual
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) return fechaStr.split('-').reverse().join('/');
+    // Si es ISO, parsear y formatear
+    const d = new Date(fechaStr);
+    if (isNaN(d.getTime())) return fechaStr;
+    const pad = (n: number) => n < 10 ? '0' + n : n;
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+  }
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={{ flexGrow: 1 }}>
@@ -148,7 +342,7 @@ export default function TabOneScreen() {
         )}
       </Pressable>
 
-      {/* Barra de búsqueda + "Más tarde" */}
+      {/* Barra de búsqueda */}
       <View style={styles.searchRow}>
         <Pressable style={styles.searchBox} onPress={() => navigation.navigate('Paginas', { screen: 'buscarViaje' })}>
           <Feather name="search" size={16} color="#555" style={{ marginRight: 6 }} />
@@ -162,13 +356,10 @@ export default function TabOneScreen() {
             pointerEvents="none"
           />
         </Pressable>
-        <Pressable style={styles.laterBtn}>
-          <Text style={styles.laterText}>Más tarde</Text>
-        </Pressable>
       </View>
 
-      {/* Botones de acción */}
-      <View style={styles.actionsRow}>
+      {/* Botones de acción y Tabs */}
+      <View style={[styles.actionsRow, { marginBottom: 12 }]}> 
         <Pressable
           style={styles.actionBtn}
           onPress={() => navigation.navigate('Paginas', { screen: 'crearViaje' })}
@@ -187,6 +378,12 @@ export default function TabOneScreen() {
         >
           <Text style={styles.actionText}>Mis Solicitudes</Text>
         </Pressable>
+        <Pressable
+          style={styles.actionBtn}
+          onPress={() => navigation.navigate('Paginas', { screen: 'pasajero' })}
+        >
+          <Text style={styles.actionText}>Pasajero</Text>
+        </Pressable>
       </View>
 
       {/* Sección "En proceso" */}
@@ -204,40 +401,62 @@ export default function TabOneScreen() {
 
       {/* Sección "Viajes próximos" */}
       <Text style={styles.sectionTitle}>Viajes próximos</Text>
-      <View style={styles.card}>
-        <Feather name="clock" size={20} color="#093659" style={{ marginRight: 12 }} />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.cardTitle}>Nuñez</Text>
-          <Text style={styles.cardSubtitle}>La Plata</Text>
-        </View>
-        <Image
-          source={{ uri: 'https://i.pravatar.cc/50?u=1' }}
-          style={styles.avatarSmall}
-        />
-      </View>
-      <View style={styles.placeholderCard} />
-
-      {/* Sección "Sugerencias" */}
-      <Text style={styles.sectionTitle}>Sugerencias</Text>
-      <View style={styles.placeholderCard} />
-
-      {/* Sección "Mis Solicitudes" */}
-      {/* <Text style={styles.sectionTitle}>Mis Solicitudes</Text>
-      {loadingSolicitudes ? (
-        <Text style={{ color: '#888' }}>Cargando...</Text>
-      ) : misSolicitudes.length === 0 ? (
-        <Text style={{ color: '#888' }}>No tienes solicitudes pendientes.</Text>
+      {viajesConfirmados.length === 0 ? (
+        <Text style={{ color: '#888', marginTop: 8, marginBottom: 8 }}>No tienes viajes confirmados en los próximos 7 días.</Text>
       ) : (
-        misSolicitudes.map((viaje) => (
-          <View key={viaje.id} style={styles.card}>
-            <Feather name="clock" size={20} color="#093659" style={{ marginRight: 12 }} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.cardTitle}>{viaje.origen} → {viaje.destino}</Text>
-              <Text style={styles.cardSubtitle}>Fecha: {new Date(viaje.fecha).toLocaleDateString()} | Pasajeros: {viaje.pasajeros} | Pago: {viaje.pago}</Text>
-            </View>
+        viajesConfirmados.map((viaje, idx) => {
+          let autoLabel = '';
+          if (
+            viaje.auto &&
+            typeof viaje.auto === 'object' &&
+            viaje.auto !== null &&
+            typeof (viaje.auto as any).marca === 'string' &&
+            typeof (viaje.auto as any).modelo === 'string'
+          ) {
+            autoLabel = `${(viaje.auto as any).marca} ${(viaje.auto as any).modelo}`;
+          } else if (typeof viaje.auto === 'string') {
+            autoLabel = viaje.auto;
+          }
+          return (
+            <Pressable key={viaje.id + idx} style={styles.card} onPress={() => handleVerMiembros(viaje)}>
+              <Feather name="clock" size={20} color="#093659" style={{ marginRight: 12 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle}>{viaje.origen} → {viaje.destino}</Text>
+                <Text style={styles.cardSubtitle}>
+                  Fecha: {formatFechaLocal(viaje.fecha)} | Pasajeros: {viaje.pasajeros} | Pago: {viaje.pago} {autoLabel ? `| ${autoLabel}` : ''}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })
+      )}
+
+      {/* Modal de miembros del viaje */}
+      <Modal
+        visible={showViajeModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowViajeModal(false)}
+      >
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+          <View style={{ backgroundColor: '#fff', padding: 24, borderRadius: 12, alignItems: 'center', minWidth: 320, maxWidth: 400 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Miembros del viaje</Text>
+            {loadingMiembros ? (
+              <ActivityIndicator size="large" color="#093659" />
+            ) : miembrosViaje ? (
+              <>
+                {renderCreador(miembrosViaje.creador)}
+                {renderPasajeros(miembrosViaje.pasajeros)}
+              </>
+            ) : (
+              <Text style={{ color: 'red' }}>No se pudo cargar la información.</Text>
+            )}
+            <Pressable onPress={() => setShowViajeModal(false)} style={{ marginTop: 18, padding: 10, borderRadius: 6, backgroundColor: '#eee' }}>
+              <Text>Cerrar</Text>
+            </Pressable>
           </View>
-        ))
-      )} */}
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -272,16 +491,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     color: '#000',
-  },
-  laterBtn: {
-    marginLeft: 8,
-    backgroundColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  laterText: {
-    color: '#333',
   },
   actionsRow: {
     flexDirection: 'row',
@@ -337,11 +546,5 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     marginLeft: 12,
-  },
-  placeholderCard: {
-    height: 60,
-    backgroundColor: '#eee',
-    borderRadius: 8,
-    marginTop: 8,
   },
 });

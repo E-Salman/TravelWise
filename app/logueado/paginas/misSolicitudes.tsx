@@ -91,6 +91,16 @@ export default function MisSolicitudesScreen() {
     navigation.navigate('editarViaje', { id: viaje.id });
   }
 
+  // Utilidad para formatear fecha local
+  function formatFechaLocal(fechaStr: string) {
+    if (!fechaStr) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) return fechaStr.split('-').reverse().join('/');
+    const d = new Date(fechaStr);
+    if (isNaN(d.getTime())) return fechaStr;
+    const pad = (n: number) => n < 10 ? '0' + n : n;
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+  }
+
   if (loading) {
     return <ActivityIndicator size="large" color="#093659" style={{ marginTop: 40 }} />;
   }
@@ -107,23 +117,30 @@ export default function MisSolicitudesScreen() {
         data={viajes}
         keyExtractor={item => item.id}
         ListEmptyComponent={<Text style={styles.empty}>No tienes solicitudes pendientes.</Text>}
-        renderItem={({ item }) => (
-          <RNView style={styles.card}>
-            <Feather name="clock" size={20} color="#093659" style={{ marginRight: 12 }} />
-            <RNView style={{ flex: 1 }}>
-              <Text style={styles.origen}>{item.origen} → {item.destino}</Text>
-              <Text style={styles.detalle}>
-                Fecha: {new Date(item.fecha).toLocaleDateString()} | Pasajeros: {item.pasajeros} | Pago: {item.pago} | Precio: ${item.precioAsiento ?? '-'} | Auto: {item.auto?.marca ? `${item.auto.marca} ${item.auto.modelo}` : '-'}
-              </Text>
+        renderItem={({ item }) => {
+          const diffDias = (new Date(item.fecha).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
+          return (
+            <RNView style={styles.card}>
+              <Feather name="clock" size={20} color="#093659" style={{ marginRight: 12 }} />
+              <RNView style={{ flex: 1 }}>
+                <Text style={styles.origen}>{item.origen} → {item.destino}</Text>
+                <Text style={styles.detalle}>
+                  Fecha: {formatFechaLocal(item.fecha)} | Pasajeros: {item.pasajeros} | Pago: {item.pago} | Precio: ${item.precioAsiento ?? '-'} | Auto: {item.auto?.marca ? `${item.auto.marca} ${item.auto.modelo}` : '-'}
+                </Text>
+              </RNView>
+              {diffDias >= 7 && (
+                <>
+                  <Pressable onPress={() => handleEditar(item)} style={{ marginHorizontal: 8 }}>
+                    <Feather name="edit" size={20} color="#007aff" />
+                  </Pressable>
+                  <Pressable onPress={() => handleEliminar(item.id)}>
+                    <Feather name="trash-2" size={20} color="#ff3b30" />
+                  </Pressable>
+                </>
+              )}
             </RNView>
-            <Pressable onPress={() => handleEditar(item)} style={{ marginHorizontal: 8 }}>
-              <Feather name="edit" size={20} color="#007aff" />
-            </Pressable>
-            <Pressable onPress={() => handleEliminar(item.id)}>
-              <Feather name="trash-2" size={20} color="#ff3b30" />
-            </Pressable>
-          </RNView>
-        )}
+          );
+        }}
       />
       {/* Modal de confirmación para web: eliminar viaje */}
       {Platform.OS === 'web' && (

@@ -255,13 +255,16 @@ export default function crearViajeScreen() {
         alert('No se pudieron obtener las coordenadas de origen o destino.');
         return;
       }
+      // Formatear fecha local YYYY-MM-DD
+      const pad = (n: number) => n < 10 ? '0' + n : n;
+      const fechaLocal = `${fecha.getFullYear()}-${pad(fecha.getMonth() + 1)}-${pad(fecha.getDate())}`;
       const viaje = {
         auto: autoObj,
         origen,
         destino,
         pasajeros,
         pago,
-        fecha: fecha.toISOString(),
+        fecha: fechaLocal, // Guardar fecha local real
         precioAsiento,
         createdAt: serverTimestamp(),
         origenCoords,
