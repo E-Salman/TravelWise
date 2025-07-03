@@ -18,6 +18,7 @@ import NuevoMedioPago from './paginas/nuevoMedioPago';
 import MisSolicitudesScreen from './paginas/misSolicitudes';
 import EditarViajeScreen from './paginas/editarViaje';
 import BuscarViajeScreen from './paginas/buscarViaje';
+import PerfilViajeScreen from './paginas/perfilViaje';
 
 const Stack = createNativeStackNavigator();
 
@@ -44,6 +45,8 @@ export default function paginasStack() {
       <Stack.Screen name="misSolicitudes" component={MisSolicitudesScreen} />
       <Stack.Screen name="editarViaje" component={EditarViajeScreen} />
       <Stack.Screen name="buscarViaje" component={BuscarViajeScreen} />
+      <Stack.Screen name="perfilViaje" component={PerfilViajeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="pasajero" component={require('./paginas/pasajero').default} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

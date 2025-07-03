@@ -46,6 +46,8 @@ export type PaginasStackParamList = {
   configuracion: undefined; 
   misSolicitudes: undefined;
   buscarViaje: undefined;
+  perfilViaje: { viajeId: string };
+  pasajero: undefined;
 };
 
 export type TabsParamList = {

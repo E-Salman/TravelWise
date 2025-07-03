@@ -2,8 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import { firebaseApp } from '../../firebase';
+import { getAuth } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let GooglePlacesAutocomplete: any = null;
 if (Platform.OS !== 'web') {
@@ -33,6 +36,7 @@ export default function BuscarViajeScreen() {
   const [destinoCoords, setDestinoCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [resultados, setResultados] = useState<any[]>([]);
   const [buscando, setBuscando] = useState(false);
+  const [rangoBusqueda, setRangoBusqueda] = useState(50); // Nuevo estado para el rango
   const origenInputRef = useRef<any>(null);
   const destinoInputRef = useRef<any>(null);
 
@@ -110,47 +114,115 @@ export default function BuscarViajeScreen() {
     }
     setBuscando(true);
     const db = getFirestore(firebaseApp);
-    // NUEVO: Recorrer todos los usuarios y sus subcolecciones de viajes
-    const usuariosRef = collection(db, 'usuarios');
+    const auth = getAuth(firebaseApp);
+    const currentUser = auth.currentUser;
+    // CORREGIDO: Recorrer todos los usuarios y sus subcolecciones de viajes en 'users'
+    const usuariosRef = collection(db, 'users');
     const usuariosSnap = await getDocs(usuariosRef);
     let viajes: any[] = [];
     for (const usuarioDoc of usuariosSnap.docs) {
-      const viajesRef = collection(db, `usuarios/${usuarioDoc.id}/viajes`);
+      // Filtrado de bloqueados: si el usuario creador tiene bloqueado al actual, no mostrar sus viajes
+      const usuarioData = usuarioDoc.data();
+      const bloqueados = Array.isArray(usuarioData.bloqueados) ? usuarioData.bloqueados : [];
+      if (currentUser && bloqueados.includes(currentUser.uid)) continue;
+      const viajesRef = collection(db, `users/${usuarioDoc.id}/viajes`);
       const viajesSnap = await getDocs(viajesRef);
       viajes = viajes.concat(
-        viajesSnap.docs.map(doc => ({ id: `${usuarioDoc.id}_${doc.id}`, ...doc.data() }))
+        viajesSnap.docs.map(doc => ({ id: `${usuarioDoc.id}_${doc.id}`, ...doc.data(), userId: usuarioDoc.id }))
       );
     }
-    const data = viajes.filter((v: any) => {
+    // Filtrar viajes que NO sean del usuario actual y que el usuario no haya solicitado ya
+    const viajesFiltrados = viajes.filter(v => {
+      if (!currentUser || v.userId === currentUser.uid) return false;
+      if (Array.isArray(v.listaPasajeros)) {
+        return !v.listaPasajeros.some((p: any) => p.uid === currentUser.uid);
+      }
+      return true;
+    });
+    const data = viajesFiltrados.filter((v: any) => {
       if (!v.origenCoords || !v.destinoCoords) return false;
+      // Asegurar que los valores sean números
+      const oLat = typeof v.origenCoords.lat === 'string' ? parseFloat(v.origenCoords.lat) : v.origenCoords.lat;
+      const oLng = typeof v.origenCoords.lng === 'string' ? parseFloat(v.origenCoords.lng) : v.origenCoords.lng;
+      const dLat = typeof v.destinoCoords.lat === 'string' ? parseFloat(v.destinoCoords.lat) : v.destinoCoords.lat;
+      const dLng = typeof v.destinoCoords.lng === 'string' ? parseFloat(v.destinoCoords.lng) : v.destinoCoords.lng;
+      if ([oLat, oLng, dLat, dLng].some(x => typeof x !== 'number' || isNaN(x))) return false;
       const dOrigen = haversineDistance(
         origenC.lat,
         origenC.lng,
-        v.origenCoords.lat,
-        v.origenCoords.lng
+        oLat,
+        oLng
       );
       const dDestino = haversineDistance(
         destinoC.lat,
         destinoC.lng,
-        v.destinoCoords.lat,
-        v.destinoCoords.lng
+        dLat,
+        dLng
       );
-      return dOrigen <= 50 && dDestino <= 50;
+      // Usar el rangoBusqueda seleccionado
+      return dOrigen <= rangoBusqueda && dDestino <= rangoBusqueda;
     });
+    console.log('Viajes tras filtro:', data.length, data.slice(0, 3));
     setResultados(data);
     setBuscando(false);
+    // Guardar última búsqueda SOLO si se ejecuta la búsqueda
+    const ultimaBusqueda = {
+      origen, destino, origenCoords, destinoCoords, rangoBusqueda
+    };
+    if (Platform.OS === 'web') {
+      localStorage.setItem('ultimaBusqueda', JSON.stringify(ultimaBusqueda));
+    } else {
+      try {
+        await AsyncStorage.setItem('ultimaBusqueda', JSON.stringify(ultimaBusqueda));
+      } catch {}
+    }
+  };
+
+  // Nueva función para pegar la última búsqueda guardada
+  const pegarUltimaBusqueda = async () => {
+    let data = null;
+    if (Platform.OS === 'web') {
+      const raw = localStorage.getItem('ultimaBusqueda');
+      if (raw) data = JSON.parse(raw);
+    } else {
+      try {
+        const raw = await AsyncStorage.getItem('ultimaBusqueda');
+        if (raw) data = JSON.parse(raw);
+      } catch {}
+    }
+    if (data) {
+      setOrigen(data.origen || '');
+      setDestino(data.destino || '');
+      setOrigenCoords(data.origenCoords || null);
+      setDestinoCoords(data.destinoCoords || null);
+      setRangoBusqueda(data.rangoBusqueda || 50);
+    }
+    // Elimina la última búsqueda después de pegarla
+    if (Platform.OS === 'web') {
+      localStorage.removeItem('ultimaBusqueda');
+    } else {
+      try {
+        await AsyncStorage.removeItem('ultimaBusqueda');
+      } catch {}
+    }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Home')}
+          style={{ marginRight: 12 }}
+        >
           <Feather name="arrow-left" size={26} color="#093659" />
         </TouchableOpacity>
         <Text style={styles.title}>Buscar viaje</Text>
+        {/* <TouchableOpacity onPress={pegarUltimaBusqueda} style={{ marginLeft: 'auto' }} accessibilityLabel="Pegar última búsqueda">
+          <MaterialCommunityIcons name="reload" size={26} color="#093659" />
+        </TouchableOpacity> */}
       </View>
       <View style={styles.inputBox}>
-        <Text style={styles.label}>Origen exacto:</Text>
+        <Text style={styles.label}>Origen:</Text>
         {Platform.OS === 'web' ? (
           <input
             ref={origenInputRef}
@@ -182,7 +254,7 @@ export default function BuscarViajeScreen() {
         )}
       </View>
       <View style={styles.inputBox}>
-        <Text style={styles.label}>Destino exacto:</Text>
+        <Text style={styles.label}>Destino:</Text>
         {Platform.OS === 'web' ? (
           <input
             ref={destinoInputRef}
@@ -213,6 +285,35 @@ export default function BuscarViajeScreen() {
           )
         )}
       </View>
+      <View style={{ marginBottom: 16 }}>
+        <Text style={{ color: '#093659', fontWeight: 'bold', marginBottom: 4 }}>
+          Rango de búsqueda: {rangoBusqueda} km
+        </Text>
+        {Platform.OS === 'web' ? (
+          <input
+            type="range"
+            min={5}
+            max={100}
+            step={1}
+            value={rangoBusqueda}
+            onChange={e => setRangoBusqueda(Number(e.target.value))}
+            style={{ width: '100%' }}
+          />
+        ) : (
+          // @ts-ignore
+          <Slider
+            minimumValue={5}
+            maximumValue={100}
+            step={1}
+            value={rangoBusqueda}
+            onValueChange={setRangoBusqueda}
+            style={{ width: '100%' }}
+            minimumTrackTintColor="#093659"
+            maximumTrackTintColor="#eee"
+            thumbTintColor="#093659"
+          />
+        )}
+      </View>
       <TouchableOpacity style={styles.button} onPress={buscarViajes} disabled={buscando}>
         <Text style={styles.buttonText}>{buscando ? 'Buscando...' : 'Buscar'}</Text>
       </TouchableOpacity>
@@ -221,10 +322,18 @@ export default function BuscarViajeScreen() {
         keyExtractor={item => item.id}
         ListEmptyComponent={buscando ? null : <Text style={{ color: '#888', marginTop: 20 }}>No se encontraron viajes.</Text>}
         renderItem={({ item }) => (
-          <View style={styles.resultCard}>
+          <TouchableOpacity
+            style={styles.resultCard}
+            onPress={() => navigation.navigate('perfilViaje', { viaje: item })}
+          >
             <Text style={styles.resultMain}>{item.origen} → {item.destino}</Text>
-            <Text style={styles.resultSub}>Fecha: {item.fecha ? new Date(item.fecha).toLocaleDateString() : '-'} | Pasajeros: {item.pasajeros ?? '-'} | Pago: {item.pago ?? '-'}</Text>
-          </View>
+            <Text style={styles.resultSub}>
+              Fecha: {item.fecha ? new Date(item.fecha).toLocaleDateString() : '-'} | Pasajeros: {item.pasajeros ?? '-'} | Pago: {item.pago ?? '-'}
+            </Text>
+            <Text style={styles.resultSub}>
+              Auto: {item.auto?.marca ? `${item.auto.marca} ${item.auto.modelo}` : '-'} | Precio asiento: ${item.precioAsiento ?? '-'}
+            </Text>
+          </TouchableOpacity>
         )}
         style={{ marginTop: 20 }}
       />
