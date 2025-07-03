@@ -107,6 +107,44 @@ export default function ChatListScreen({ navigation }: any) {
     navigation.navigate('ChatDetail', { chatId });
   };
 
+  // Abrir o crear chat con amigo
+  const openChatAmigo = async (amigo: any) => {
+    if (!myUid) return;
+    // Buscar chat existente
+    const ids = [myUid, amigo.id].sort();
+    const q2 = query(collection(db, 'users', myUid, 'chats'));
+    const snap2 = await getDocs(q2);
+    let chatId = '';
+    snap2.forEach(d => {
+      const uids = (d.data() as any).userIds;
+      if (uids && uids.length === 2 && [uids[0], uids[1]].sort().join() === ids.join()) {
+        chatId = d.id;
+      }
+    });
+    if (!chatId) {
+      // crear nuevo chat en ambos usuarios
+      let myName = 'Yo';
+      const meSnap = await getDoc(doc(db, 'users', myUid));
+      if (meSnap.exists()) {
+        myName = (meSnap.data() as any).nombre || myName;
+      }
+      const chatData = {
+        userIds: ids,
+        participants: [myName, amigo.nombre],
+        lastMessage: { text: '', timestamp: serverTimestamp() },
+      };
+      const ref = doc(collection(db, 'users', myUid, 'chats'));
+      chatId = ref.id;
+      await Promise.all([
+        setDoc(doc(db, 'users', myUid, 'chats', chatId), chatData),
+        setDoc(doc(db, 'users', amigo.id, 'chats', chatId), chatData),
+      ]);
+    }
+    setModalChat(false);
+    setFab(false);
+    await openChat(chatId);
+  };
+
   // Render de cada chat: avatar + nombre + preview + badge
   const renderChatItem = ({ item }: { item: any }) => {
     const otherUid = item.userIds.find((u: string) => u !== myUid);
@@ -190,7 +228,7 @@ export default function ChatListScreen({ navigation }: any) {
               data={amigos}
               keyExtractor={u => u.id}
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.userItem} onPress={() => {/* openChatAmigo(item) */}}>
+                <TouchableOpacity style={styles.userItem} onPress={() => openChatAmigo(item)}>
                   <Image source={{ uri: item.avatarUrl }} style={styles.userAvatar} />
                   <Text style={styles.userName}>{item.nombre}</Text>
                 </TouchableOpacity>
