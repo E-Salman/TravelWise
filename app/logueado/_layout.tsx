@@ -9,6 +9,9 @@ import SoporteScreen from './paginas/soporte';
 import TerminosScreen from './paginas/terminos';
 import PrivacidadScreen from './paginas/privacidad';
 
+// Pagos
+import PagosPage from './paginas/pagos';
+
 const Drawer = createDrawerNavigator();
 
 export default function LoggedInLayout() {
@@ -45,6 +48,17 @@ export default function LoggedInLayout() {
       <Drawer.Screen
         name="Privacidad"
         component={PrivacidadScreen}
+      />
+
+      {/* Pagos igual que Soporte */}
+      <Drawer.Screen
+        name="Pagos"
+        component={PagosPage}
+      />
+
+      <Drawer.Screen
+        name="NuevoMedioPago"
+        component={require('./paginas/nuevoMedioPago').default}
       />
     </Drawer.Navigator>
   );

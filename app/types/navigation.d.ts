@@ -43,15 +43,24 @@ export type PaginasStackParamList = {
   perfilUser: { uid: string };
   SolicitudesAmistad: undefined;
   ListaAmigos: undefined;
-  configuracion: undefined; // <-- Agregado para la pantalla de configuración
+  configuracion: undefined; 
+  misSolicitudes: undefined;
+  buscarViaje: undefined;
+  perfilViaje: { viajeId: string };
+  pasajero: undefined;
 };
 
 export type TabsParamList = {
   Home: undefined;
   Perfil: undefined;
-  Chat: undefined;
+  Chat: NavigatorScreenParams<ChatStackParamList>;
   Menu: undefined;
   Paginas: NavigatorScreenParams<PaginasStackParamList>;
+};
+
+export type ChatStackParamList = {
+  ChatList: undefined;
+  ChatDetail: { chatId: string };
 };
 
 export type HomeScreenProps = BottomTabScreenProps<TabsParamList, 'Home'>;
