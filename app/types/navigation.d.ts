@@ -43,7 +43,9 @@ export type PaginasStackParamList = {
   perfilUser: { uid: string };
   SolicitudesAmistad: undefined;
   ListaAmigos: undefined;
-  configuracion: undefined;
+  configuracion: undefined; 
+  misSolicitudes: undefined;
+  buscarViaje: undefined;
 };
 
 export type TabsParamList = {
