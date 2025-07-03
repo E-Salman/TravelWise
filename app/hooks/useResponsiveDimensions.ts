@@ -39,9 +39,6 @@ export function useResponsiveDimensions(options: Options = {}) {
       }
     }
 
-    console.log("width: " + width);
-    console.log("height: " + height);
-
     // ✅ Avoid upscaling by capping to max size
     if (maxWidth !== undefined) {
       width = Math.min(width, maxWidth);

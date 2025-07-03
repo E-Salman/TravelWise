@@ -4,13 +4,25 @@ import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerActions } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 
 import home from './home';
 import perfil from './perfil';
-import chat from './chat';
+import ChatListScreen from './chat';
+import ChatDetailScreen from './chat/[chatId]';
 import paginasStack from '../paginasStack';
 
 const Tab = createBottomTabNavigator();
+const ChatStack = createStackNavigator();
+
+function ChatStackScreen() {
+  return (
+    <ChatStack.Navigator screenOptions={{ headerShown: false }}>
+      <ChatStack.Screen name="ChatList" component={ChatListScreen} />
+      <ChatStack.Screen name="ChatDetail" component={ChatDetailScreen} />
+    </ChatStack.Navigator>
+  );
+}
 
 export default function TabsLayout() {
   return (
@@ -38,7 +50,7 @@ export default function TabsLayout() {
       {/* Pantallas normales */}
       <Tab.Screen name="Home" component={home} />
       <Tab.Screen name="Perfil" component={perfil} />
-      <Tab.Screen name="Chat" component={chat} />
+      <Tab.Screen name="Chat" component={ChatStackScreen} />
 
       {/**
         Al tocar “Menú” no navegamos a ninguna ruta nueva,

@@ -1,13 +1,13 @@
 // app/logueado/tabs/chat/index.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Image, Modal } from 'react-native';
-import { collection, onSnapshot, query, where, orderBy, addDoc, serverTimestamp, getDoc, doc, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, orderBy, addDoc, serverTimestamp, getDoc, doc, getDocs, setDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../../firebase';
 
-export default function ChatListScreen() {
+export default function ChatListScreen({ navigation }: any) {
   const [chats, setChats] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [amigos, setAmigos] = useState<any[]>([]);
@@ -24,8 +24,7 @@ export default function ChatListScreen() {
   useEffect(() => {
     if (!myUid) return;
     const q = query(
-      collection(db, 'chats'),
-      where('userIds', 'array-contains', myUid),
+      collection(db, 'users', myUid, 'chats'),
       orderBy('lastMessage.timestamp', 'desc')
     );
     return onSnapshot(q, snap => {
@@ -57,9 +56,9 @@ export default function ChatListScreen() {
   // 4) abrir o crear chat 1-a-1
   const openChat = async (friend: any) => {
     if (!myUid) return;
-    // intenta encontrar uno existente
+    // intenta encontrar uno existente en subcolección del usuario
     const ids = [myUid, friend.id].sort();
-    const q2 = query(collection(db, 'chats'), where('userIds', 'array-contains', myUid));
+    const q2 = query(collection(db, 'users', myUid, 'chats'));
     const snap2 = await getDocs(q2);
     let chatId = '';
     snap2.forEach(d => {
@@ -69,17 +68,29 @@ export default function ChatListScreen() {
       }
     });
     if (!chatId) {
-      const ref = await addDoc(collection(db, 'chats'), {
-        userIds:      ids,
-        participants: [friend.nombre],
-        lastMessage:  { text:'', timestamp: serverTimestamp() },
-      });
+      // crear nuevo chat en ambos usuarios
+      let myName = 'Yo';
+      const meSnap = await getDoc(doc(db, 'users', myUid));
+      if (meSnap.exists()) {
+        myName = (meSnap.data() as any).nombre || myName;
+      }
+      const chatData = {
+        userIds: ids,
+        participants: [myName, friend.nombre],
+        lastMessage: { text: '', timestamp: serverTimestamp() },
+      };
+      // Create a new chatId
+      const ref = doc(collection(db, 'users', myUid, 'chats'));
       chatId = ref.id;
+      await Promise.all([
+        setDoc(doc(db, 'users', myUid, 'chats', chatId), chatData),
+        setDoc(doc(db, 'users', friend.id, 'chats', chatId), chatData),
+      ]);
     }
     setModalChat(false);
     setFab(false);
-    // **Importante**: navegar al detalle
-    await router.push({ pathname: '/logueado/tabs/[chatId]', params: { chatId } });
+    // Navegar al detalle del chat usando React Navigation stack
+    navigation.navigate('ChatDetail', { chatId });
   };
 
   return (
@@ -104,7 +115,7 @@ export default function ChatListScreen() {
           <TouchableOpacity
             style={styles.chatItem}
             onPress={() =>
-              router.push({ pathname: '/logueado/tabs/[chatId]', params: { chatId: item.id } })
+              navigation.navigate('ChatDetail', { chatId: item.id })
             }
           >
             <View style={{ flexDirection:'row', alignItems:'center' }}>
