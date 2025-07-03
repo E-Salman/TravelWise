@@ -110,12 +110,12 @@ export default function BuscarViajeScreen() {
     }
     setBuscando(true);
     const db = getFirestore(firebaseApp);
-    // NUEVO: Recorrer todos los usuarios y sus subcolecciones de viajes
-    const usuariosRef = collection(db, 'usuarios');
+    // CORREGIDO: Recorrer todos los usuarios y sus subcolecciones de viajes en 'users'
+    const usuariosRef = collection(db, 'users');
     const usuariosSnap = await getDocs(usuariosRef);
     let viajes: any[] = [];
     for (const usuarioDoc of usuariosSnap.docs) {
-      const viajesRef = collection(db, `usuarios/${usuarioDoc.id}/viajes`);
+      const viajesRef = collection(db, `users/${usuarioDoc.id}/viajes`);
       const viajesSnap = await getDocs(viajesRef);
       viajes = viajes.concat(
         viajesSnap.docs.map(doc => ({ id: `${usuarioDoc.id}_${doc.id}`, ...doc.data() }))
