@@ -97,6 +97,28 @@ export default function TabOneScreen() {
   // URL del embed de Google Maps (tu API Key ya está incluida)
   const mapSrc = `https://www.google.com/maps/embed/v1/place?key=AIzaSyA_sve6Kikr_ABPr_RrnmR8hU4i-ixJBdA&q=-34.6037,-58.3816&zoom=14&maptype=roadmap`;
 
+  // Nuevo: Mis Solicitudes (viajes creados por el usuario y pendientes)
+  const [misSolicitudes, setMisSolicitudes] = useState<Viaje[]>([]);
+  const [loadingSolicitudes, setLoadingSolicitudes] = useState(true);
+
+  useEffect(() => {
+    async function fetchMisSolicitudes() {
+      setLoadingSolicitudes(true);
+      const user = auth.currentUser;
+      if (!user) return;
+      const viajesRef = collection(db, 'users', user.uid, 'viajes');
+      const snapshot = await getDocs(viajesRef);
+      const now = new Date();
+      const data = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter((v: any): v is Viaje => typeof v.fecha === 'string' && new Date(v.fecha) > now)
+        .sort((a: Viaje, b: Viaje) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+      setMisSolicitudes(data);
+      setLoadingSolicitudes(false);
+    }
+    fetchMisSolicitudes();
+  }, [auth.currentUser]);
+
   return (
     <View style={styles.root}>
       {/* Campana de notificaciones */}
@@ -146,15 +168,18 @@ export default function TabOneScreen() {
         >
           <Text style={styles.actionText}>+ Crear viaje</Text>
         </Pressable>
-        {
-          <Pressable
-            style={styles.actionBtn}
-            onPress={handleRepetirViaje}
-          >
-            <Text style={styles.actionText}>+ Repetir viaje</Text>
-          </Pressable>
-        }
-    
+        <Pressable
+          style={styles.actionBtn}
+          onPress={handleRepetirViaje}
+        >
+          <Text style={styles.actionText}>+ Repetir viaje</Text>
+        </Pressable>
+        <Pressable
+          style={styles.actionBtn}
+          onPress={() => navigation.navigate('Paginas', { screen: 'misSolicitudes' })}
+        >
+          <Text style={styles.actionText}>Mis Solicitudes</Text>
+        </Pressable>
       </View>
 
       {/* Sección "En proceso" */}
@@ -188,6 +213,24 @@ export default function TabOneScreen() {
       {/* Sección "Sugerencias" */}
       <Text style={styles.sectionTitle}>Sugerencias</Text>
       <View style={styles.placeholderCard} />
+
+      {/* Sección "Mis Solicitudes" */}
+      <Text style={styles.sectionTitle}>Mis Solicitudes</Text>
+      {loadingSolicitudes ? (
+        <Text style={{ color: '#888' }}>Cargando...</Text>
+      ) : misSolicitudes.length === 0 ? (
+        <Text style={{ color: '#888' }}>No tienes solicitudes pendientes.</Text>
+      ) : (
+        misSolicitudes.map((viaje) => (
+          <View key={viaje.id} style={styles.card}>
+            <Feather name="clock" size={20} color="#093659" style={{ marginRight: 12 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>{viaje.origen} → {viaje.destino}</Text>
+              <Text style={styles.cardSubtitle}>Fecha: {new Date(viaje.fecha).toLocaleDateString()} | Pasajeros: {viaje.pasajeros} | Pago: {viaje.pago}</Text>
+            </View>
+          </View>
+        ))
+      )}
     </View>
   );
 }

@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   TextInput,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import { useRouter } from 'expo-router';
@@ -19,7 +20,7 @@ import type { PaginasStackParamList } from '@/app/types/navigation';
 
 // Firebase imports
 import { getAuth } from 'firebase/auth';
-import { getFirestore, collection, addDoc, serverTimestamp, arrayRemove, updateDoc, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, arrayRemove, updateDoc, doc, setDoc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { firebaseApp } from '@/app/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -59,12 +60,29 @@ export default function crearViajeScreen() {
   const [pago, setPago] = useState(prefill.pago || '');
   const [fecha, setFecha] = useState(prefill.fecha ? new Date(prefill.fecha) : new Date());
   const [showFecha, setShowFecha] = useState(false);
+  const [autosUsuario, setAutosUsuario] = useState<any[]>([]);
+  const [viajesPendientes, setViajesPendientes] = useState<any[]>([]);
+  const [solicitudesCreadas, setSolicitudesCreadas] = useState<Viaje[]>([]);
+  const [loadingSolicitudes, setLoadingSolicitudes] = useState(true);
   
   // Google Maps API Key (replace with your actual key)
   const GOOGLE_MAPS_APIKEY = 'AIzaSyA_sve6Kikr_ABPr_RrnmR8hU4i-ixJBdA';
 
   const origenInputRef = useRef(null);
   const destinoInputRef = useRef(null);
+
+  // Definir el tipo de viaje para tipado correcto
+  // No usar 'export' aquí, solo 'type'
+  type Viaje = {
+    id: string;
+    auto: any;
+    origen: string;
+    destino: string;
+    pasajeros: string;
+    pago: string;
+    fecha: string; // ISO string
+    createdAt?: any;
+  };
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -111,6 +129,67 @@ export default function crearViajeScreen() {
     }
   }, []);
 
+  useEffect(() => {
+    const fetchAutos = async () => {
+      try {
+        const auth = getAuth(firebaseApp);
+        const user = auth.currentUser;
+        if (!user) return;
+        const userRef = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+        const data = userSnap.data();
+        setAutosUsuario(data?.autos || []);
+      } catch (e) {
+        // Opcional: mostrar error
+      }
+    };
+    fetchAutos();
+
+    // Fetch viajes pendientes
+    const fetchViajesPendientes = async () => {
+      try {
+        const auth = getAuth(firebaseApp);
+        const user = auth.currentUser;
+        if (!user) return;
+        const db = getFirestore(firebaseApp);
+        const viajesRef = collection(db, 'users', user.uid, 'viajes');
+        const snapshot = await getDocs(viajesRef);
+        const now = new Date();
+        const pendientes: Viaje[] = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter((v: any): v is Viaje => typeof v.fecha === 'string' && new Date(v.fecha) > now)
+          .sort((a: Viaje, b: Viaje) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+        setViajesPendientes(pendientes);
+      } catch (e) {
+        // Opcional: mostrar error
+      }
+    };
+    fetchViajesPendientes();
+
+    const fetchSolicitudesCreadas = async () => {
+      setLoadingSolicitudes(true);
+      try {
+        const auth = getAuth(firebaseApp);
+        const user = auth.currentUser;
+        if (!user) return;
+        const db = getFirestore(firebaseApp);
+        const viajesRef = collection(db, 'users', user.uid, 'viajes');
+        const snapshot = await getDocs(viajesRef);
+        const now = new Date();
+        const viajes: Viaje[] = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter((v: any): v is Viaje => typeof v.fecha === 'string' && new Date(v.fecha) > now)
+          .sort((a: Viaje, b: Viaje) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+        setSolicitudesCreadas(viajes);
+      } catch (e) {
+        // Opcional: mostrar error
+      } finally {
+        setLoadingSolicitudes(false);
+      }
+    };
+    fetchSolicitudesCreadas();
+  }, []);
+
   // Helper to encode addresses for URL
   function encodeAddress(addr: string) {
     return encodeURIComponent(addr.trim());
@@ -142,8 +221,9 @@ export default function crearViajeScreen() {
         alert('Debes iniciar sesión para guardar el viaje.');
         return;
       }
+      const autoObj = typeof auto === 'string' ? JSON.parse(auto) : auto;
       const viaje = {
-        auto,
+        auto: autoObj,
         origen,
         destino,
         pasajeros,
@@ -152,7 +232,6 @@ export default function crearViajeScreen() {
         createdAt: serverTimestamp(),
       };
       await addDoc(collection(db, 'users', user.uid, 'viajes'), viaje);
-      // Store last trip as a field directly in the user document
       await setDoc(doc(db, 'users', user.uid), { lastViaje: viaje }, { merge: true });
       alert('¡Viaje guardado exitosamente!');
       volverAHome();
@@ -161,228 +240,255 @@ export default function crearViajeScreen() {
     }
   }
 
+  // Obtener el máximo de pasajeros del auto seleccionado
+  let maxPasajeros = 4;
+  if (auto) {
+    try {
+      const autoObj = typeof auto === 'string' ? JSON.parse(auto) : auto;
+      if (autoObj && autoObj.maxPasajeros) {
+        maxPasajeros = parseInt(autoObj.maxPasajeros, 10) || 4;
+      }
+    } catch {}
+  }
+
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={volverAHome}>
-          <Image
-            source={require('@/assets/images/flechapng.png')}
-            style={styles.backIcon}
-          />
-        </TouchableOpacity>
-        <Text style={styles.title}>Crear viaje</Text>
-      </View>
+      {/* Eliminar secciones superiores: Repetir Viajes y Solicitudes creadas */}
 
-      {/* Auto */}
-      <View style={styles.inputBox}>
-        <Image source={require('@/assets/images/coche.png')} style={styles.icon} />
-        <Picker
-          selectedValue={auto}
-          onValueChange={(itemValue) => setAuto(itemValue)}
-          style={styles.picker}
-        >
-          <Picker.Item label="Seleccionar auto" value="" />
-          <Picker.Item label="Toyota Corolla" value="corolla" />
-          <Picker.Item label="Renault Sandero" value="sandero" />
-        </Picker>
-      </View>
-
-      {/* Origen */}
-      <View style={styles.inputBox}>
-        <Image source={require('@/assets/images/origen.png')} style={styles.icon} />
-        {Platform.OS === 'web' ? (
-          <input
-            id="origen-autocomplete"
-            ref={origenInputRef}
-            placeholder="Origen"
-            value={origen}
-            onChange={e => setOrigen(e.target.value)}
-            style={{
-              flex: 1,
-              fontSize: 16,
-              padding: 6,
-              border: 'none',
-              outline: 'none',
-              backgroundColor: 'transparent',
-              color: '#333',
-            }}
-            type="text"
-            autoComplete="off"
-          />
-        ) : (
-          GooglePlacesAutocomplete && (
-            <GooglePlacesAutocomplete
-              placeholder="Origen"
-              onPress={(data: any, details: any = null) => {
-                setOrigen(data.description);
-              }}
-              query={{
-                key: GOOGLE_MAPS_APIKEY,
-                language: 'es',
-              }}
-              fetchDetails={true}
-              styles={{
-                textInput: styles.input,
-                container: { flex: 1 },
-                listView: { zIndex: 10 },
-              }}
-              textInputProps={{
-                value: origen,
-                onChangeText: setOrigen,
-              }}
-              enablePoweredByContainer={false}
-            />
-          )
-        )}
-      </View>
-
-      {/* Destino */}
-      <View style={styles.inputBox}>
-        <Image source={require('@/assets/images/destino.png')} style={styles.icon} />
-        {Platform.OS === 'web' ? (
-          <input
-            id="destino-autocomplete"
-            ref={destinoInputRef}
-            placeholder="Destino"
-            value={destino}
-            onChange={e => setDestino(e.target.value)}
-            style={{
-              flex: 1,
-              fontSize: 16,
-              padding: 6,
-              border: 'none',
-              outline: 'none',
-              backgroundColor: 'transparent',
-              color: '#333',
-            }}
-            type="text"
-            autoComplete="off"
-          />
-        ) : (
-          GooglePlacesAutocomplete && (
-            <GooglePlacesAutocomplete
-              placeholder="Destino"
-              onPress={(data: any, details: any = null) => {
-                setDestino(data.description);
-              }}
-              query={{
-                key: GOOGLE_MAPS_APIKEY,
-                language: 'es',
-              }}
-              fetchDetails={true}
-              styles={{
-                textInput: styles.input,
-                container: { flex: 1 },
-                listView: { zIndex: 10 },
-              }}
-              textInputProps={{
-                value: destino,
-                onChangeText: setDestino,
-              }}
-              enablePoweredByContainer={false}
-            />
-          )
-        )}
-      </View>
-
-      {/* Pasajeros */}
-      <View style={styles.inputBox}>
-        <Image source={require('@/assets/images/grupo.png')} style={styles.icon} />
-        <Picker
-          selectedValue={pasajeros}
-          onValueChange={(itemValue) => setPasajeros(itemValue)}
-          style={styles.picker}
-        >
-          <Picker.Item label="Pasajeros" value="" />
-          <Picker.Item label="1" value="1" />
-          <Picker.Item label="2" value="2" />
-          <Picker.Item label="3" value="3" />
-          <Picker.Item label="4" value="4" />
-        </Picker>
-      </View>
-
-      {/* Pago */}
-      <View style={styles.inputBox}>
-        <Image source={require('@/assets/images/pagar.png')} style={styles.icon} />
-        <Picker
-          selectedValue={pago}
-          onValueChange={(itemValue) => setPago(itemValue)}
-          style={styles.picker}
-        >
-          <Picker.Item label="Pago" value="" />
-          <Picker.Item label="Efectivo" value="efectivo" />
-          <Picker.Item label="Mercado Pago" value="mp" />
-          <Picker.Item label="Tarjeta" value="tarjeta" />
-        </Picker>
-      </View>
-
-      {/* Fecha */}
-      {Platform.OS === 'web' ? (
-        <View style={styles.inputBox}>
-          <TouchableOpacity
-            onPress={() => {
-              const input = document.getElementById('fecha') as HTMLInputElement;
-              if (input) {
-                input.type = 'date';
-                input.showPicker?.();
-                input.focus();
-              }
-            }}
-          >
+      <ScrollView contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={true}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={volverAHome}>
             <Image
-              source={require('@/assets/images/calendario.png')}
-              style={styles.icon}
+              source={require('@/assets/images/flechapng.png')}
+              style={styles.backIcon}
             />
           </TouchableOpacity>
-
-          <input
-            id="fecha"
-            defaultValue={fecha.toISOString().split('T')[0]}
-            onChange={(e) => setFecha(new Date(e.target.value))}
-            style={{
-              flex: 1,
-              fontSize: 16,
-              padding: 6,
-              border: 'none',
-              outline: 'none',
-              backgroundColor: 'transparent',
-              color: '#ededed',
-              filter: 'invert(100%) sepia(100%) saturate(0%) hue-rotate(180deg) brightness(100%) contrast(100%)',
-            }}
-            type="date"
-          />
-
+          <Text style={styles.title}>Crear viaje</Text>
         </View>
-      ) : (
-        <>
-          <TouchableOpacity
-            style={styles.inputBox}
-            onPress={() => setShowFecha(true)}
+
+        {/* Auto */}
+        <View style={styles.inputBox}>
+          <Image source={require('@/assets/images/coche.png')} style={styles.icon} />
+          <Picker
+            selectedValue={auto}
+            onValueChange={(itemValue) => {
+              setAuto(itemValue);
+              setPasajeros(""); // Limpiar pasajeros al cambiar auto
+            }}
+            style={styles.picker}
           >
+            <Picker.Item label="Seleccionar auto" value="" />
+            {autosUsuario.length === 0 ? (
+              <Picker.Item label="No tienes autos registrados" value="" />
+            ) : (
+              autosUsuario.map((a, i) => (
+                <Picker.Item
+                  key={i}
+                  label={`${a.marca} ${a.modelo}`}
+                  value={JSON.stringify(a)}
+                />
+              ))
+            )
+            }
+          </Picker>
+        </View>
+
+        {/* Origen */}
+        <View style={styles.inputBox}>
+          <Image source={require('@/assets/images/origen.png')} style={styles.icon} />
+          {Platform.OS === 'web' ? (
+            <input
+              id="origen-autocomplete"
+              ref={origenInputRef}
+              placeholder="Origen"
+              value={origen}
+              onChange={e => setOrigen(e.target.value)}
+              style={{
+                flex: 1,
+                fontSize: 16,
+                padding: 6,
+                border: 'none',
+                outline: 'none',
+                backgroundColor: 'transparent',
+                color: '#333',
+              }}
+              type="text"
+              autoComplete="off"
+            />
+          ) : (
+            GooglePlacesAutocomplete && (
+              <GooglePlacesAutocomplete
+                placeholder="Origen"
+                onPress={(data: any, details: any = null) => {
+                  setOrigen(data.description);
+                }}
+                query={{
+                  key: GOOGLE_MAPS_APIKEY,
+                  language: 'es',
+                }}
+                fetchDetails={true}
+                styles={{
+                  textInput: styles.input,
+                  container: { flex: 1 },
+                  listView: { zIndex: 10 },
+                }}
+                textInputProps={{
+                  value: origen,
+                  onChangeText: setOrigen,
+                }}
+                enablePoweredByContainer={false}
+              />
+            )
+          )}
+        </View>
+
+        {/* Destino */}
+        <View style={styles.inputBox}>
+          <Image source={require('@/assets/images/destino.png')} style={styles.icon} />
+          {Platform.OS === 'web' ? (
+            <input
+              id="destino-autocomplete"
+              ref={destinoInputRef}
+              placeholder="Destino"
+              value={destino}
+              onChange={e => setDestino(e.target.value)}
+              style={{
+                flex: 1,
+                fontSize: 16,
+                padding: 6,
+                border: 'none',
+                outline: 'none',
+                backgroundColor: 'transparent',
+                color: '#333',
+              }}
+              type="text"
+              autoComplete="off"
+            />
+          ) : (
+            GooglePlacesAutocomplete && (
+              <GooglePlacesAutocomplete
+                placeholder="Destino"
+                onPress={(data: any, details: any = null) => {
+                  setDestino(data.description);
+                }}
+                query={{
+                  key: GOOGLE_MAPS_APIKEY,
+                  language: 'es',
+                }}
+                fetchDetails={true}
+                styles={{
+                  textInput: styles.input,
+                  container: { flex: 1 },
+                  listView: { zIndex: 10 },
+                }}
+                textInputProps={{
+                  value: destino,
+                  onChangeText: setDestino,
+                }}
+                enablePoweredByContainer={false}
+              />
+            )
+          )}
+        </View>
+
+        {/* Pasajeros */}
+        {auto ? (
+          <View style={styles.inputBox}>
+            <Image source={require('@/assets/images/grupo.png')} style={styles.icon} />
+            <Picker
+              selectedValue={pasajeros}
+              onValueChange={(itemValue) => setPasajeros(itemValue)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Pasajeros" value="" />
+              {Array.from({ length: maxPasajeros }, (_, i) => (
+                <Picker.Item key={i+1} label={`${i+1}`} value={`${i+1}`} />
+              ))}
+            </Picker>
+          </View>
+        ) : null}
+
+        {/* Pago */}
+        <View style={styles.inputBox}>
+          <Image source={require('@/assets/images/pagar.png')} style={styles.icon} />
+          <Picker
+            selectedValue={pago}
+            onValueChange={(itemValue) => setPago(itemValue)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Pago" value="" />
+            <Picker.Item label="Efectivo" value="efectivo" />
+            <Picker.Item label="Mercado Pago" value="mp" />
+            <Picker.Item label="Tarjeta" value="tarjeta" />
+          </Picker>
+        </View>
+
+        {/* Fecha */}
+        {Platform.OS === 'web' ? (
+          <View style={styles.inputBox}>
             <Image
               source={require('@/assets/images/calendario.png')}
               style={styles.icon}
             />
-            <Text style={styles.inputText}>
-              {fecha.toLocaleDateString()}
-            </Text>
-          </TouchableOpacity>
-
-          {showFecha && (
-            <DateTimePicker
-              value={fecha}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(event, selectedDate) => {
-                setShowFecha(false);
-                if (selectedDate) setFecha(selectedDate);
+            <input
+              id="fecha"
+              value={fecha.toISOString().split('T')[0]}
+              onChange={(e) => setFecha(new Date(e.target.value))}
+              style={{
+                flex: 1,
+                fontSize: 16,
+                padding: 6,
+                border: 'none',
+                outline: 'none',
+                backgroundColor: 'transparent',
+                color: '#093659',
+                cursor: 'pointer',
               }}
+              type="date"
             />
-          )}
-        </>
-      )}
+          </View>
+        ) : (
+          <>
+            <TouchableOpacity
+              style={styles.inputBox}
+              onPress={() => setShowFecha(true)}
+            >
+              <Image
+                source={require('@/assets/images/calendario.png')}
+                style={styles.icon}
+              />
+              <Text style={styles.inputText}>
+                {fecha.toLocaleDateString()}
+              </Text>
+            </TouchableOpacity>
 
+            {showFecha && (
+              <DateTimePicker
+                value={fecha}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={(event, selectedDate) => {
+                  setShowFecha(false);
+                  if (event.type === 'set' && selectedDate) {
+                    setFecha(selectedDate);
+                  } else if (Platform.OS === 'ios' && selectedDate) {
+                    setFecha(selectedDate);
+                  }
+                  // En Android, si se cancela, no se actualiza la fecha
+                }}
+              />
+            )}
+          </>
+        )}
+
+        {/* Confirmar */}
+        <TouchableOpacity style={styles.button} onPress={handleConfirmar}>
+          <Text style={styles.buttonText}>Confirmar</Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* Mapa al final, fuera del ScrollView */}
       <View style={[styles.mapContainer, { height: mapH, width: '100%' }]}>
         <iframe
           width="100%"
@@ -393,14 +499,10 @@ export default function crearViajeScreen() {
           allowFullScreen
         />
       </View>
-
-      {/* Confirmar */}
-      <TouchableOpacity style={styles.button} onPress={handleConfirmar}>
-        <Text style={styles.buttonText}>Confirmar</Text>
-      </TouchableOpacity>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -469,5 +571,48 @@ const styles = StyleSheet.create({
     marginTop: 8,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  seccionesRow: {
+    flexDirection: Platform.OS === 'web' ? 'row' : 'column',
+    justifyContent: 'space-between',
+    gap: 24,
+    marginBottom: 24,
+  },
+  seccionBox: {
+    flex: 1,
+    backgroundColor: '#F6F8FA',
+    borderRadius: 10,
+    padding: 14,
+    marginRight: Platform.OS === 'web' ? 12 : 0,
+    marginBottom: Platform.OS === 'web' ? 0 : 12,
+    minWidth: 220,
+    minHeight: 120,
+    boxShadow: Platform.OS === 'web' ? '0 2px 8px #0001' : undefined,
+  },
+  seccionTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#093659',
+    marginBottom: 8,
+  },
+  seccionEmpty: {
+    color: '#888',
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+  solicitudItem: {
+    marginBottom: 8,
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  solicitudMain: {
+    fontSize: 15,
+    color: '#093659',
+    fontWeight: '500',
+  },
+  solicitudFecha: {
+    fontSize: 13,
+    color: '#555',
   },
 });

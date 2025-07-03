@@ -44,6 +44,7 @@ export type PaginasStackParamList = {
   SolicitudesAmistad: undefined;
   ListaAmigos: undefined;
   configuracion: undefined; 
+  misSolicitudes: undefined;
 };
 
 export type TabsParamList = {
